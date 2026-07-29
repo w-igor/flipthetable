@@ -76,7 +76,7 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - Go 1.21+
 - Node.js (opcjonalnie, dla toolów)
 
-## Setup Lokalny
+## Setup z Neon.tech (Production Database)
 
 ### 1. Clone i setup
 ```bash
@@ -84,33 +84,43 @@ cd flipthetable
 cp .env.example .env
 ```
 
-### 2. Database (Neon cloud)
-1. Stwórz projekt w [Neon](https://neon.tech)
-2. Przejdź do SQL Editor
-3. Skopiuj zawartość `init.sql` i wykonaj
-4. Zaktualizuj `PGPASSWORD` w `admin_passwd_neon.env` danymi z Neon
-
-### 3. Tymczasowo: Database (Docker)
+### 2. Skonfiguruj .env dla Neon
+Edytuj `.env` i dodaj dane z Neon:
 ```bash
-docker-compose up -d
-# Czeka 10 sekund na health check
+PGUSER=admin
+PGPASSWORD=npg_TokODPY2bS4f
+PGHOST=ep-still-band-aiqm10i0-pooler.c-4.us-east-1.aws.neon.tech
+PGPORT=5432
+PGDATABASE=flipthetable
 ```
+
+### 3. Inicjalizuj bazę danych (Neon)
+1. Przejdź do [Neon Console](https://console.neon.tech)
+2. Otwórz projekt → SQL Editor
+3. Skopiuj zawartość `init.sql` i wykonaj zapytania
+4. Czekaj na "Queries executed successfully"
 
 ### 4. Backend
 ```bash
 cd backend
 go mod download
 go run main.go
-# Server: http://localhost:8080
+# Server: http://localhost:8080 ✓
 ```
 
 ### 5. Frontend
 ```bash
 # Otwórz frontend/index.html w przeglądarce
-# Lub uruchom prosty serwer:
+# Lub uruchom:
 cd frontend
 python -m http.server 3000
-# Otwórz: http://localhost:3000
+# Otwórz: http://localhost:3000 ✓
+```
+
+## Setup Lokalny (z Docker - opcjonalnie)
+```bash
+docker-compose up -d
+# Uruchamia lokalny PostgreSQL zamiast Neon
 ```
 
 ## API Endpoints
@@ -170,19 +180,45 @@ JWT_SECRET=***           # JWT secret (zmienić na prod!)
 PORT=8080                # Server port
 ```
 
+## Production Deployment
+
+### Verify Neon Connection
+```bash
+# Test connection (install psql first):
+psql "postgresql://admin:npg_TokODPY2bS4f@ep-still-band-aiqm10i0-pooler.c-4.us-east-1.aws.neon.tech/flipthetable?sslmode=require"
+```
+
+### Environment Variables (production)
+Upewnij się że masz w `.env`:
+```
+JWT_SECRET=change-this-strong-random-key
+PGPASSWORD=npg_TokODPY2bS4f
+```
+
+### Deploy Backend (Render/Railway/Heroku)
+1. Push to GitHub
+2. Connect repository w platform'ie
+3. Set env variables
+4. Deploy
+
+### Deploy Frontend (Vercel/Netlify)
+1. Zmień `API_URL` na production backend
+2. Deploy `frontend/` folder
+
 ## Troubleshooting
 
 ### CORS błędy w frontend
 - Backend musi mieć CORS headers (już configured)
-- Frontend robiący fetch powinien mieć `http://localhost:8080`
+- Frontend robiący fetch powinien mieć `http://localhost:8080` (dev) lub production URL
 
 ### Token expired
 - Frontend automatycznie refreshuje token
 - Jeśli refresh token wygasł, user musi się zalogować ponownie
 
-### Database connection refused
-- Upewnij się że Docker kontener jest running
-- Sprawdź `docker-compose logs postgres`
+### Database connection refused (Neon)
+- Sprawdź czy connection string jest poprawny
+- Czekaj ~30s na cold start (Neon może być w sleep mode)
+- Verify IP whitelisting w Neon settings
 
 ## Development
 
