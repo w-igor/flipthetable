@@ -14,7 +14,23 @@ window.addEventListener('load', () => {
     loadCategories();
     loadProducts();
     loadCart();
+    checkIfSeller();
 });
+
+async function checkIfSeller() {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${API_URL}/api/seller/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+            document.getElementById('sellerLink').style.display = 'inline-block';
+        }
+    } catch (error) {
+        // User is not a seller
+    }
+}
 
 async function loadCategories() {
     try {

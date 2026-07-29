@@ -57,6 +57,19 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Auto-reconnect with exponential backoff
 - ✅ Unread notification badge
 
+## Stage 5: Seller Dashboard ✅
+
+- ✅ Seller registration & profile
+- ✅ Product management (CRUD)
+- ✅ Product listing with edit/delete
+- ✅ Inventory management
+- ✅ Order management view
+- ✅ Sales analytics dashboard
+- ✅ Performance stats (total sales, avg rating)
+- ✅ Monthly sales tracking
+- ✅ Seller verification status
+- ✅ Multi-tab dashboard UI
+
 ## Wymagania
 
 - Docker & Docker Compose

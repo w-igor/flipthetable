@@ -98,6 +98,17 @@ func main() {
 	// WebSocket - Protected
 	mux.HandleFunc("GET /ws", authMiddlewareWS(handleWebSocket))
 
+	// Seller - Protected
+	mux.HandleFunc("POST /api/seller/register", corsMiddleware(authMiddleware(handleRegisterAsSeller)))
+	mux.HandleFunc("GET /api/seller/profile", corsMiddleware(authMiddleware(handleGetSellerProfile)))
+	mux.HandleFunc("GET /api/seller/products", corsMiddleware(authMiddleware(handleGetSellerProducts)))
+	mux.HandleFunc("POST /api/seller/products", corsMiddleware(authMiddleware(handleCreateProduct)))
+	mux.HandleFunc("PUT /api/seller/products/{id}", corsMiddleware(authMiddleware(handleUpdateProduct)))
+	mux.HandleFunc("DELETE /api/seller/products/{id}", corsMiddleware(authMiddleware(handleDeleteProduct)))
+	mux.HandleFunc("PUT /api/seller/products/{id}/stock", corsMiddleware(authMiddleware(handleUpdateProductStock)))
+	mux.HandleFunc("GET /api/seller/orders", corsMiddleware(authMiddleware(handleGetSellerOrders)))
+	mux.HandleFunc("GET /api/seller/stats", corsMiddleware(authMiddleware(handleGetSellerStats)))
+
 	log.Println("🚀 Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
