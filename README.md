@@ -33,17 +33,26 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Checkout z formularzem wysyłki
 - ✅ Tworzenie zamówień w transakcji (grupowanie per sklep, blokada stanu magazynowego, walidacja ilości)
 - ✅ Strona potwierdzenia zamówienia
-- ✅ `GET /orders`, `GET /orders/:id` (backend gotowy, brak jeszcze frontendowej historii zamówień)
+- ✅ Strona „Moje zamówienia" (`pages/orders.html`) — historia zamówień kupującego z pozycjami i statusem
+
+### Sprzedawcy
+- ✅ Zakładanie sklepu (dowolne konto może „zostać sprzedawcą" zakładając sklep — `POST /shops`)
+- ✅ Publiczny profil sklepu (`pages/shop-profile.html`) — baner, avatar, opis, siatka ofert
+- ✅ Panel sprzedawcy (`pages/dashboard.html`): edycja profilu sklepu, CRUD ofert (dodaj/edytuj/wyłącz), zarządzanie zamówieniami (zmiana statusu), statystyki (liczba zamówień, przychód, aktywne oferty)
+
+### Opinie
+- ✅ Kupujący może ocenić zakupioną pozycję (gwiazdki 1-5 + komentarz) ze strony „Moje zamówienia" lub ze strony produktu, gdy zamówienie jest opłacone/w realizacji/wysłane/dostarczone
+- ✅ `avg_rating` produktu przeliczane automatycznie po dodaniu opinii
 
 ## Niezrobione jeszcze ❌
 
-- ❌ Strona/historia zamówień użytkownika (endpoints są, brak UI)
-- ❌ Statystyki zamówień (suma wydatków, liczba oczekujących)
-- ❌ Dashboard sprzedawcy (CRUD produktów, zarządzanie zamówieniami, statystyki sprzedaży)
+- ❌ Własne zdjęcia (upload) — obecnie zdjęcia produktów/sklepu to linki URL
+- ❌ Statystyki zamówień po stronie kupującego (suma wydatków, liczba oczekujących)
 - ❌ WebSockety / powiadomienia w czasie rzeczywistym
-- ❌ Recenzje produktów, ulubione (`favorites`), wiadomości (`messages`) — tabele istnieją w `init.sql`, brak API i UI
+- ❌ Ulubione (`favorites`), wiadomości (`messages`) — tabele istnieją w `init.sql`, brak API i UI
 - ❌ Integracja płatności (tabela `payments` istnieje, brak logiki)
 - ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
+- ❌ Blokada kupowania własnych ofert (to samo konto może być kupującym i sprzedawcą jednocześnie)
 
 ## Wymagania
 
@@ -86,13 +95,32 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 
 ### Katalog
 - `GET /categories` — lista kategorii
-- `GET /listings` — lista produktów; query params: `category`, `q`, `min_price`, `max_price`, `in_stock`, `sort`, `page`, `page_size`
+- `GET /listings` — lista produktów; query params: `category`, `shop_id`, `q`, `min_price`, `max_price`, `in_stock`, `sort`, `page`, `page_size`
 - `GET /listings/:id` — szczegóły produktu (zwiększa `views_count`)
 
 ### Zamówienia (wymagają auth)
 - `POST /orders` — `{items: [{listing_id, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep
-- `GET /orders` — historia zamówień kupującego
+- `GET /orders` — historia zamówień kupującego (z pozycjami i flagą `reviewed` per pozycja)
 - `GET /orders/:id` — szczegóły zamówienia
+
+### Sklepy
+- `POST /shops` — zakłada sklep dla zalogowanego użytkownika (ustawia `is_seller = true`), wymaga auth
+- `GET /shops/me` — dane własnego sklepu (auth)
+- `PUT /shops/me` — edycja własnego sklepu (auth)
+- `GET /shops/:id` — publiczny profil sklepu (nazwa, opis, baner, avatar, liczba ofert)
+
+### Oferty sprzedawcy (wymagają auth + własnego sklepu)
+- `POST /listings` — dodanie oferty do własnego sklepu
+- `PUT /listings/:id` — edycja własnej oferty
+- `DELETE /listings/:id` — dezaktywacja oferty (soft-delete, `is_active = false`)
+- `GET /seller/listings` — wszystkie własne oferty (także nieaktywne)
+- `GET /seller/stats` — statystyki sklepu (zamówienia, przychód, aktywne/wszystkie oferty)
+- `GET /seller/orders` — zamówienia złożone we własnym sklepie
+- `PUT /seller/orders/:id/status` — zmiana statusu zamówienia
+
+### Opinie
+- `POST /reviews` — `{order_item_id, rating, comment}` — ocena zakupionej pozycji (auth, wymaga statusu zamówienia `paid`/`processing`/`shipped`/`delivered`)
+- `GET /listings/:id/reviews` — lista opinii dla produktu
 
 ## Environment Variables
 
