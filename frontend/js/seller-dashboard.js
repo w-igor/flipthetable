@@ -1,6 +1,8 @@
 const API_URL = 'http://localhost:8080';
-let currentEditingProductId = null;
+
+let currentShop = null;
 let categories = [];
+let currentEditingListingId = null;
 
 // Initialize
 window.addEventListener('load', async () => {
@@ -10,18 +12,54 @@ window.addEventListener('load', async () => {
         return;
     }
 
+    await loadShop();
     await loadCategories();
-    await loadSellerProfile();
-    await loadSellerStats();
-    switchTab('dashboard');
+    loadListings();
+    loadOrders();
 });
+
+async function loadShop() {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+            showNoShopMessage();
+            return;
+        }
+
+        const user = await response.json();
+
+        if (!user.is_seller) {
+            showNoShopMessage();
+            return;
+        }
+
+        document.getElementById('shopName').textContent = user.username + ' Store';
+    } catch (error) {
+        console.error('Failed to load shop:', error);
+        showNoShopMessage();
+    }
+}
+
+function showNoShopMessage() {
+    const content = document.querySelector('.seller-content');
+    content.innerHTML = `
+        <div style="text-align: center; padding: 50px;">
+            <h2>Nie jesteś sprzedawcą</h2>
+            <p style="color: #666; margin: 15px 0;">Aby sprzedawać produkty, musisz najpierw stać się sprzedawcą.</p>
+        </div>
+    `;
+}
 
 async function loadCategories() {
     try {
         const response = await fetch(`${API_URL}/api/categories`);
         categories = await response.json() || [];
 
-        const select = document.getElementById('productCategory');
+        const select = document.getElementById('listingCategory');
         categories.forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
@@ -33,174 +71,88 @@ async function loadCategories() {
     }
 }
 
-async function loadSellerProfile() {
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/seller/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-            // User is not a seller yet
-            showNoSellerMessage();
-            return;
-        }
-
-        const profile = await response.json();
-
-        document.getElementById('sellerName').textContent = profile.seller_name || 'Sprzedawca';
-        document.getElementById('sellerNameInput').value = profile.seller_name || '';
-        document.getElementById('sellerDescriptionInput').value = profile.seller_description || '';
-        document.getElementById('profileEmail').textContent = profile.email;
-        document.getElementById('profileJoined').textContent = new Date(profile.joined_at).toLocaleDateString('pl-PL');
-
-        const statusEl = document.getElementById('profileStatus');
-        if (profile.seller_verified) {
-            statusEl.textContent = 'Zweryfikowany';
-            statusEl.className = 'badge verified';
-        }
-
-        // Load products and stats
-        await loadSellerProducts();
-        await loadSellerOrders();
-    } catch (error) {
-        console.error('Failed to load seller profile:', error);
-    }
-}
-
-function showNoSellerMessage() {
-    const content = document.querySelector('.seller-content');
-    content.innerHTML = `
-        <div style="text-align: center; padding: 50px;">
-            <h2>Nie jesteś sprzedawcą</h2>
-            <p style="color: #666; margin: 15px 0;">Aby mieć dostęp do panelu sprzedawcy, musisz się zarejestrować jako sprzedawca.</p>
-            <button class="btn-primary" onclick="registerAsSeller()">Zarejestruj się jako sprzedawca</button>
-        </div>
-    `;
-}
-
-async function registerAsSeller() {
-    const sellerName = prompt('Podaj nazwę swojego sklepu:');
-    if (!sellerName) return;
-
-    const description = prompt('Opis sklepu (opcjonalnie):') || '';
-
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/seller/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                seller_name: sellerName,
-                seller_description: description,
-            }),
-        });
-
-        if (response.ok) {
-            alert('Zarejestrowano jako sprzedawca!');
-            location.reload();
-        }
-    } catch (error) {
-        alert('Błąd przy rejestracji');
-        console.error(error);
-    }
-}
-
-async function loadSellerStats() {
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/seller/stats`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        const stats = await response.json();
-
-        document.getElementById('statProducts').textContent = stats.total_products;
-        document.getElementById('statOrders').textContent = stats.total_orders;
-        document.getElementById('statSalesMonth').textContent = stats.sales_this_month.toFixed(2) + ' zł';
-        document.getElementById('statInventory').textContent = stats.inventory_value.toFixed(2) + ' zł';
-
-        document.getElementById('analyticsTotalSales').textContent = stats.total_sales.toFixed(2) + ' zł';
-        document.getElementById('analyticsRating').textContent = stats.average_rating.toFixed(1) + '/5 ⭐';
-        document.getElementById('analyticsMonthOrders').textContent = stats.orders_this_month;
-        document.getElementById('analyticsMonthSales').textContent = stats.sales_this_month.toFixed(2) + ' zł';
-
-        // Top product
-        if (stats.top_product) {
-            document.getElementById('topProductInfo').innerHTML = `<strong>${stats.top_product}</strong>`;
-        }
-    } catch (error) {
-        console.error('Failed to load stats:', error);
-    }
-}
-
-async function loadSellerProducts() {
+async function loadListings() {
     try {
         const token = localStorage.getItem('access_token');
         const response = await fetch(`${API_URL}/api/seller/products`, {
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
-        const products = await response.json() || [];
+        if (!response.ok) return;
 
-        const list = document.getElementById('productsList');
-        if (products.length === 0) {
-            list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Brak produktów. <a href="#" onclick="openAddProductModal(); return false;">Dodaj pierwszy produkt</a></p>';
+        const listings = await response.json() || [];
+
+        const list = document.getElementById('listingsList');
+        if (listings.length === 0) {
+            list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Brak produktów</p>';
+            document.getElementById('statListings').textContent = '0';
             return;
         }
 
-        list.innerHTML = products.map(p => `
-            <div class="product-item">
-                <img src="${p.image_url}" alt="${p.name}" class="product-item-image" />
-                <div class="product-item-info">
-                    <div class="product-item-name">${p.name}</div>
-                    <div class="product-item-meta">
-                        <span class="product-item-price">${p.price.toFixed(2)} zł</span>
-                        <span class="product-item-stock ${p.stock <= 5 ? 'low' : ''}">${p.stock} szt.</span>
+        document.getElementById('statListings').textContent = listings.length;
+        list.innerHTML = listings.map(l => `
+            <div class="listing-item">
+                <img src="${l.image_url || 'https://via.placeholder.com/200'}" alt="${l.name}" class="listing-item-image" />
+                <div class="listing-item-info">
+                    <div class="listing-item-name">${l.name}</div>
+                    <div class="listing-item-meta">
+                        <span class="listing-item-price">${l.price.toFixed(2)} zł</span>
+                        <span class="listing-item-quantity ${l.stock <= 5 ? 'low' : ''}">${l.stock} szt.</span>
                     </div>
-                    <div class="product-item-actions">
-                        <button class="btn-edit" onclick="editProduct(${p.id})">Edytuj</button>
-                        <button class="btn-delete" onclick="deleteProduct(${p.id})">Usuń</button>
+                    <div class="listing-item-actions">
+                        <button class="btn-edit" onclick="editListing('${l.id}')">Edytuj</button>
+                        <button class="btn-delete" onclick="deleteListing('${l.id}')">Usuń</button>
                     </div>
                 </div>
             </div>
         `).join('');
     } catch (error) {
-        console.error('Failed to load products:', error);
+        console.error('Failed to load listings:', error);
     }
 }
 
-async function loadSellerOrders() {
+async function loadOrders() {
     try {
         const token = localStorage.getItem('access_token');
         const response = await fetch(`${API_URL}/api/seller/orders`, {
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
+        if (!response.ok) return;
+
         const orders = await response.json() || [];
 
         const list = document.getElementById('sellerOrdersList');
         if (orders.length === 0) {
             list.innerHTML = '<p style="text-align: center; color: #999;">Brak zamówień</p>';
+            document.getElementById('statOrders').textContent = '0';
             return;
         }
 
         const statusLabels = {
             'pending': 'Oczekujące',
-            'confirmed': 'Potwierdzone',
+            'paid': 'Zapłacone',
+            'processing': 'Przetwarzane',
             'shipped': 'Wysłane',
             'delivered': 'Dostarczone',
             'cancelled': 'Anulowane',
         };
 
+        document.getElementById('statOrders').textContent = orders.length;
+
+        let totalSales = 0;
+        orders.forEach(o => {
+            if (o.status !== 'cancelled') {
+                totalSales += o.total_amount;
+            }
+        });
+        document.getElementById('statSales').textContent = totalSales.toFixed(2) + ' zł';
+
         list.innerHTML = orders.map(o => `
             <div class="order-row">
                 <div class="order-row-info">
                     <span class="order-row-label">Zamówienie</span>
-                    <span class="order-row-value">#${o.id}</span>
+                    <span class="order-row-value">#${o.id.substring(0, 8).toUpperCase()}</span>
                 </div>
                 <div class="order-row-info">
                     <span class="order-row-label">Data</span>
@@ -210,87 +162,82 @@ async function loadSellerOrders() {
                     <span class="order-row-label">Status</span>
                     <span class="order-row-value">${statusLabels[o.status]}</span>
                 </div>
-                <div class="order-row-actions">
-                    <button class="btn-view" onclick="viewOrder(${o.id})">Szczegóły</button>
+                <div class="order-row-info">
+                    <span class="order-row-label">Razem</span>
+                    <span class="order-row-value">${o.total_amount.toFixed(2)} zł</span>
                 </div>
             </div>
         `).join('');
     } catch (error) {
-        console.error('Failed to load seller orders:', error);
+        console.error('Failed to load orders:', error);
     }
 }
 
 function switchTab(tabName) {
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
 
-    // Deactivate all nav items
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
 
-    // Show selected tab
     const tab = document.getElementById(tabName + 'Tab');
     if (tab) tab.classList.add('active');
 
-    // Activate nav item
     event.target?.classList.add('active');
 }
 
-function openAddProductModal() {
-    currentEditingProductId = null;
-    document.getElementById('productModalTitle').textContent = 'Dodaj produkt';
-    document.getElementById('productForm').reset();
-    document.getElementById('productModal').classList.add('active');
+function openAddListingModal() {
+    currentEditingListingId = null;
+    document.getElementById('listingModalTitle').textContent = 'Dodaj produkt';
+    document.getElementById('listingForm').reset();
+    document.getElementById('listingModal').classList.add('active');
 }
 
-function closeProductModal() {
-    document.getElementById('productModal').classList.remove('active');
+function closeListingModal() {
+    document.getElementById('listingModal').classList.remove('active');
 }
 
-async function editProduct(productId) {
-    // Load product data
+async function editListing(listingId) {
     try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/products/${productId}`);
-        const product = await response.json();
+        const response = await fetch(`${API_URL}/api/listings/${listingId}`);
+        const listing = await response.json();
 
-        currentEditingProductId = productId;
-        document.getElementById('productModalTitle').textContent = 'Edytuj produkt';
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productCategory').value = product.category_id;
-        document.getElementById('productDescription').value = product.description;
-        document.getElementById('productPrice').value = product.price;
-        document.getElementById('productStock').value = product.stock;
-        document.getElementById('productImage').value = product.image_url;
+        currentEditingListingId = listingId;
+        document.getElementById('listingModalTitle').textContent = 'Edytuj produkt';
+        document.getElementById('listingTitle').value = listing.title;
+        document.getElementById('listingCategory').value = listing.category_id || '';
+        document.getElementById('listingDescription').value = listing.description;
+        document.getElementById('listingPrice').value = listing.price;
+        document.getElementById('listingQuantity').value = listing.quantity;
+        document.getElementById('listingPhotoUrl').value = listing.photos?.[0]?.url || '';
 
-        document.getElementById('productModal').classList.add('active');
+        document.getElementById('listingModal').classList.add('active');
     } catch (error) {
         alert('Błąd przy ładowaniu produktu');
         console.error(error);
     }
 }
 
-async function handleProductSubmit(event) {
+async function handleListingSubmit(event) {
     event.preventDefault();
 
-    const product = {
-        name: document.getElementById('productName').value,
-        category_id: parseInt(document.getElementById('productCategory').value),
-        description: document.getElementById('productDescription').value,
-        price: parseFloat(document.getElementById('productPrice').value),
-        stock: parseInt(document.getElementById('productStock').value),
-        image_url: document.getElementById('productImage').value || 'https://via.placeholder.com/200',
+    const listing = {
+        title: document.getElementById('listingTitle').value,
+        category_id: document.getElementById('listingCategory').value,
+        description: document.getElementById('listingDescription').value,
+        price: parseFloat(document.getElementById('listingPrice').value),
+        quantity: parseInt(document.getElementById('listingQuantity').value),
+        photos: document.getElementById('listingPhotoUrl').value ? [document.getElementById('listingPhotoUrl').value] : [],
     };
 
     try {
         const token = localStorage.getItem('access_token');
         let url, method;
 
-        if (currentEditingProductId) {
-            url = `${API_URL}/api/seller/products/${currentEditingProductId}`;
+        if (currentEditingListingId) {
+            url = `${API_URL}/api/seller/products/${currentEditingListingId}`;
             method = 'PUT';
         } else {
             url = `${API_URL}/api/seller/products`;
@@ -303,18 +250,15 @@ async function handleProductSubmit(event) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify(product),
+            body: JSON.stringify(listing),
         });
 
         if (response.ok) {
-            closeProductModal();
-            await loadSellerProducts();
-            await loadSellerStats();
-            notificationManager.showToast(
-                currentEditingProductId ? 'Produkt zaktualizowany' : 'Produkt dodany',
-                'Zmiany zostały zapisane',
-                'success'
-            );
+            closeListingModal();
+            await loadListings();
+            alert(currentEditingListingId ? 'Produkt zaktualizowany' : 'Produkt dodany');
+        } else {
+            alert('Błąd przy zapisywaniu produktu');
         }
     } catch (error) {
         alert('Błąd przy zapisywaniu produktu');
@@ -322,37 +266,25 @@ async function handleProductSubmit(event) {
     }
 }
 
-async function deleteProduct(productId) {
+async function deleteListing(listingId) {
     if (!confirm('Czy na pewno chcesz usunąć ten produkt?')) return;
 
     try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/seller/products/${productId}`, {
+        const response = await fetch(`${API_URL}/api/seller/products/${listingId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
         if (response.ok) {
-            await loadSellerProducts();
-            await loadSellerStats();
-            notificationManager.showToast('Produkt usunięty', 'Produkt został usunięty ze sklepu', 'success');
+            await loadListings();
+            alert('Produkt usunięty');
         }
     } catch (error) {
         alert('Błąd przy usuwaniu produktu');
         console.error(error);
     }
 }
-
-async function viewOrder(orderId) {
-    alert(`Szczegóły zamówienia #${orderId} - feature coming soon`);
-}
-
-// Profile form submission
-document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    // TODO: Implement profile update
-    alert('Aktualizacja profilu - feature coming soon');
-});
 
 function logout() {
     localStorage.clear();

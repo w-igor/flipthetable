@@ -6,16 +6,14 @@
     <title>Panel Sprzedawcy - FlipTheTable</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/seller-dashboard.css">
-    <link rel="stylesheet" href="../css/notifications.css">
 </head>
 <body>
     <header class="navbar">
         <div class="container">
             <h1 class="logo">FlipTheTable</h1>
             <nav class="nav-links">
-                <span id="sellerName" class="seller-badge">Sprzedawca</span>
+                <span id="shopName" class="seller-badge">Sklep</span>
                 <a href="shop.html">← Wróć do sklepu</a>
-                <a href="#" class="notification-icon" onclick="notificationManager.togglePanel(); return false;">🔔</a>
                 <a href="#" onclick="logout()">Wyloguj</a>
             </nav>
         </div>
@@ -26,10 +24,8 @@
         <aside class="seller-sidebar">
             <nav class="seller-nav">
                 <button class="nav-item active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-                <button class="nav-item" onclick="switchTab('products')">📦 Moje produkty</button>
+                <button class="nav-item" onclick="switchTab('listings')">📦 Moje produkty</button>
                 <button class="nav-item" onclick="switchTab('orders')">🛒 Zamówienia</button>
-                <button class="nav-item" onclick="switchTab('analytics')">📈 Analityka</button>
-                <button class="nav-item" onclick="switchTab('profile')">⚙️ Profil</button>
             </nav>
         </aside>
 
@@ -37,51 +33,32 @@
         <section class="seller-content">
             <!-- Dashboard Tab -->
             <div id="dashboardTab" class="tab-content active">
-                <h2>Witaj w Panelu Sprzedawcy! 👋</h2>
+                <h2>Panel sprzedawcy</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Produkty</div>
-                        <div class="stat-value" id="statProducts">0</div>
+                        <div class="stat-value" id="statListings">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Zamówienia</div>
                         <div class="stat-value" id="statOrders">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Sprzedaż (30 dni)</div>
-                        <div class="stat-value" id="statSalesMonth">0 zł</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Wartość zapasów</div>
-                        <div class="stat-value" id="statInventory">0 zł</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid">
-                    <div class="dashboard-section">
-                        <h3>Zaraz oczekujące zamówienia</h3>
-                        <div id="pendingOrdersList">
-                            <p style="color: #999;">Ładowanie...</p>
-                        </div>
-                    </div>
-                    <div class="dashboard-section">
-                        <h3>Najlepszy produkt</h3>
-                        <div id="topProductInfo">
-                            <p style="color: #999;">Ładowanie...</p>
-                        </div>
+                        <div class="stat-label">Sprzedaż</div>
+                        <div class="stat-value" id="statSales">0 zł</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Products Tab -->
-            <div id="productsTab" class="tab-content">
+            <!-- Listings Tab -->
+            <div id="listingsTab" class="tab-content">
                 <div class="section-header">
-                    <h2>Moje Produkty</h2>
-                    <button class="btn-primary" onclick="openAddProductModal()">+ Dodaj produkt</button>
+                    <h2>Moje produkty</h2>
+                    <button class="btn-primary" onclick="openAddListingModal()">+ Dodaj produkt</button>
                 </div>
 
-                <div id="productsList" class="products-list">
-                    <!-- Products loaded here -->
+                <div id="listingsList" class="listings-list">
+                    <!-- Listings loaded here -->
                 </div>
             </div>
 
@@ -92,70 +69,23 @@
                     <!-- Orders loaded here -->
                 </div>
             </div>
-
-            <!-- Analytics Tab -->
-            <div id="analyticsTab" class="tab-content">
-                <h2>Analityka Sprzedaży</h2>
-                <div class="analytics-grid">
-                    <div class="analytics-card">
-                        <h3>Całkowita sprzedaż</h3>
-                        <div class="analytics-value" id="analyticsTotalSales">0 zł</div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3>Średnia ocena</h3>
-                        <div class="analytics-value" id="analyticsRating">0/5 ⭐</div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3>Zamówienia tego miesiąca</h3>
-                        <div class="analytics-value" id="analyticsMonthOrders">0</div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3>Sprzedaż tego miesiąca</h3>
-                        <div class="analytics-value" id="analyticsMonthSales">0 zł</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Tab -->
-            <div id="profileTab" class="tab-content">
-                <h2>Profil Sprzedawcy</h2>
-                <form id="profileForm" class="profile-form">
-                    <div class="form-group">
-                        <label>Nazwa sklepu</label>
-                        <input type="text" id="sellerNameInput" required />
-                    </div>
-
-                    <div class="form-group">
-                        <label>Opis sklepu</label>
-                        <textarea id="sellerDescriptionInput" rows="4"></textarea>
-                    </div>
-
-                    <div class="form-info">
-                        <p>Email: <strong id="profileEmail"></strong></p>
-                        <p>Dołączył: <strong id="profileJoined"></strong></p>
-                        <p>Status: <span id="profileStatus" class="badge">Oczekiwanie weryfikacji</span></p>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Zapisz zmiany</button>
-                </form>
-            </div>
         </section>
     </main>
 
-    <!-- Add/Edit Product Modal -->
-    <div id="productModal" class="modal">
+    <!-- Add/Edit Listing Modal -->
+    <div id="listingModal" class="modal">
         <div class="modal-content modal-large">
-            <span class="close" onclick="closeProductModal()">&times;</span>
-            <h2 id="productModalTitle">Dodaj produkt</h2>
-            <form id="productForm" onsubmit="handleProductSubmit(event)">
+            <span class="close" onclick="closeListingModal()">&times;</span>
+            <h2 id="listingModalTitle">Dodaj produkt</h2>
+            <form id="listingForm" onsubmit="handleListingSubmit(event)">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nazwa produktu</label>
-                        <input type="text" id="productName" required />
+                        <input type="text" id="listingTitle" required />
                     </div>
                     <div class="form-group">
                         <label>Kategoria</label>
-                        <select id="productCategory" required>
+                        <select id="listingCategory" required>
                             <option value="">Wybierz kategorię</option>
                         </select>
                     </div>
@@ -163,23 +93,23 @@
 
                 <div class="form-group">
                     <label>Opis</label>
-                    <textarea id="productDescription" rows="3" required></textarea>
+                    <textarea id="listingDescription" rows="3" required></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Cena (zł)</label>
-                        <input type="number" id="productPrice" step="0.01" min="0.01" required />
+                        <input type="number" id="listingPrice" step="0.01" min="0.01" required />
                     </div>
                     <div class="form-group">
                         <label>Ilość w magazynie</label>
-                        <input type="number" id="productStock" min="0" required />
+                        <input type="number" id="listingQuantity" min="0" required />
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>URL obrazu</label>
-                    <input type="url" id="productImage" />
+                    <label>URL głównego zdjęcia</label>
+                    <input type="url" id="listingPhotoUrl" />
                 </div>
 
                 <button type="submit" class="btn-primary">Zapisz produkt</button>
@@ -187,22 +117,6 @@
         </div>
     </div>
 
-    <script src="../js/websocket.js"></script>
-    <script src="../js/notifications-ui.js"></script>
     <script src="../js/seller-dashboard.js"></script>
-    <script>
-        // Initialize WebSocket
-        window.addEventListener('load', async () => {
-            const token = localStorage.getItem('access_token');
-            if (token) {
-                try {
-                    notificationManager.init();
-                    await wsClient.connect(token);
-                } catch (error) {
-                    console.error('Failed to connect WebSocket:', error);
-                }
-            }
-        });
-    </script>
 </body>
 </html>

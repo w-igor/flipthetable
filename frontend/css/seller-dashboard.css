@@ -5,7 +5,6 @@
     min-height: calc(100vh - 70px);
 }
 
-/* Sidebar */
 .seller-sidebar {
     background: #f8f9fa;
     padding: 20px;
@@ -32,6 +31,7 @@
     font-weight: 500;
     color: #666;
     transition: all 0.2s;
+    border: none;
 }
 
 .nav-item:hover {
@@ -46,7 +46,6 @@
     border-color: transparent;
 }
 
-/* Header */
 .seller-badge {
     background: #d4edda;
     color: #155724;
@@ -56,7 +55,6 @@
     font-weight: 600;
 }
 
-/* Content Area */
 .seller-content {
     padding: 30px;
     overflow-y: auto;
@@ -73,7 +71,6 @@
     color: #333;
 }
 
-/* Tab System */
 .tab-content {
     display: none;
 }
@@ -84,15 +81,10 @@
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-/* Stats Grid */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -122,34 +114,13 @@
     font-weight: bold;
 }
 
-/* Dashboard Grid */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.dashboard-section {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.dashboard-section h3 {
-    color: #333;
-    margin-bottom: 15px;
-    font-size: 16px;
-}
-
-/* Products List */
-.products-list {
+.listings-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 15px;
 }
 
-.product-item {
+.listing-item {
     background: white;
     border-radius: 8px;
     overflow: hidden;
@@ -157,56 +128,55 @@
     transition: box-shadow 0.2s;
 }
 
-.product-item:hover {
+.listing-item:hover {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
 }
 
-.product-item-image {
+.listing-item-image {
     width: 100%;
     height: 150px;
     object-fit: cover;
     background: #f0f0f0;
 }
 
-.product-item-info {
+.listing-item-info {
     padding: 15px;
 }
 
-.product-item-name {
+.listing-item-name {
     font-weight: 600;
     color: #333;
     margin-bottom: 8px;
     font-size: 14px;
 }
 
-.product-item-meta {
+.listing-item-meta {
     display: flex;
     justify-content: space-between;
     margin-bottom: 12px;
     font-size: 13px;
 }
 
-.product-item-price {
+.listing-item-price {
     color: #667eea;
     font-weight: 600;
 }
 
-.product-item-stock {
+.listing-item-quantity {
     color: #999;
 }
 
-.product-item-stock.low {
+.listing-item-quantity.low {
     color: #e74c3c;
     font-weight: 600;
 }
 
-.product-item-actions {
+.listing-item-actions {
     display: flex;
     gap: 8px;
 }
 
-.btn-edit,
-.btn-delete {
+.btn-edit, .btn-delete {
     flex: 1;
     padding: 8px;
     border: 1px solid #ddd;
@@ -227,7 +197,6 @@
     color: #e74c3c;
 }
 
-/* Orders List */
 .orders-list {
     display: flex;
     flex-direction: column;
@@ -262,61 +231,21 @@
     font-weight: 600;
 }
 
-.order-row-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.btn-view {
-    padding: 6px 12px;
-    background: #667eea;
+.btn-primary {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background 0.2s;
-}
-
-.btn-view:hover {
-    background: #764ba2;
-}
-
-/* Analytics */
-.analytics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.analytics-card {
-    background: white;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    text-align: center;
-}
-
-.analytics-card h3 {
-    color: #666;
+    border-radius: 6px;
     font-size: 14px;
-    margin-bottom: 15px;
-    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.analytics-value {
-    color: #667eea;
-    font-size: 32px;
-    font-weight: bold;
-}
-
-/* Profile Form */
-.profile-form {
-    background: white;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    max-width: 600px;
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 }
 
 .form-row {
@@ -337,8 +266,7 @@
     font-size: 14px;
 }
 
-.form-group input,
-.form-group textarea {
+.form-group input, .form-group textarea, .form-group select {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #ddd;
@@ -348,46 +276,12 @@
     transition: border-color 0.2s;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-info {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
-    margin: 20px 0;
-}
-
-.form-info p {
-    margin: 8px 0;
-    font-size: 14px;
-    color: #666;
-}
-
-.form-info strong {
-    color: #333;
-}
-
-.badge {
-    display: inline-block;
-    background: #fff3cd;
-    color: #856404;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.badge.verified {
-    background: #d4edda;
-    color: #155724;
-}
-
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -440,25 +334,6 @@
     color: #333;
 }
 
-/* Buttons */
-.btn-primary {
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-}
-
-/* Responsive */
 @media (max-width: 768px) {
     .seller-container {
         grid-template-columns: 1fr;
@@ -471,7 +346,7 @@
 
     .seller-nav {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .order-row {
@@ -482,11 +357,11 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .products-list {
+    .listings-list {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .analytics-grid {
+    .form-row {
         grid-template-columns: 1fr;
     }
 }
