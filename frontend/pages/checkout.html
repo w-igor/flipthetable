@@ -27,28 +27,16 @@
                 </div>
                 <div class="summary-totals">
                     <div class="summary-row">
-                        <span>Produkty:</span>
-                        <span id="subtotal">0,00 zł</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Dostawca:</span>
-                        <span id="shipping">9,99 zł</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>VAT (23%):</span>
-                        <span id="tax">0,00 zł</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Razem do zapłaty:</span>
+                        <span>Razem:</span>
                         <span id="totalPrice">0,00 zł</span>
                     </div>
                 </div>
             </section>
 
-            <!-- Shipping Address -->
+            <!-- Checkout Form -->
             <section class="checkout-form">
                 <h2>Adres dostawy</h2>
-                <form id="checkoutForm">
+                <form id="checkoutForm" onsubmit="handleCheckout(event)">
                     <div class="form-group">
                         <label>Imię i nazwisko</label>
                         <input type="text" id="fullName" required />
@@ -76,58 +64,12 @@
                             <option>Polska</option>
                             <option>Niemcy</option>
                             <option>Francja</option>
-                            <option>Inne</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Telefon</label>
                         <input type="tel" id="phone" required />
-                    </div>
-
-                    <h3>Metoda dostawy</h3>
-                    <div class="shipping-methods">
-                        <label class="radio-option">
-                            <input type="radio" name="shipping" value="standard" checked onchange="updateShipping()" />
-                            <span>
-                                <strong>Kurier DPD (1-2 dni)</strong>
-                                <em>9,99 zł</em>
-                            </span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="shipping" value="express" onchange="updateShipping()" />
-                            <span>
-                                <strong>Kurier Ekspres (24h)</strong>
-                                <em>24,99 zł</em>
-                            </span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="shipping" value="paczkomat" onchange="updateShipping()" />
-                            <span>
-                                <strong>Paczkomat</strong>
-                                <em>4,99 zł</em>
-                            </span>
-                        </label>
-                    </div>
-
-                    <h3>Metoda płatności</h3>
-                    <div class="payment-methods">
-                        <label class="radio-option">
-                            <input type="radio" name="payment" value="card" checked />
-                            <span>Karta kredytowa</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="payment" value="transfer" />
-                            <span>Przelew bankowy</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="payment" value="blik" />
-                            <span>BLIK</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="payment" value="paypal" />
-                            <span>PayPal</span>
-                        </label>
                     </div>
 
                     <div class="form-group checkbox">

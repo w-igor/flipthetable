@@ -1,36 +1,21 @@
 const API_URL = 'http://localhost:8080';
 
-let currentProducts = [];
-let currentCart = [];
+let allListings = [];
+let cart = [];
 
 // Initialize
 window.addEventListener('load', () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
 
     loadCategories();
-    loadProducts();
+    loadListings();
     loadCart();
     checkIfSeller();
 });
-
-async function checkIfSeller() {
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/seller/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-            document.getElementById('sellerLink').style.display = 'inline-block';
-        }
-    } catch (error) {
-        // User is not a seller
-    }
-}
 
 async function loadCategories() {
     try {
@@ -49,55 +34,46 @@ async function loadCategories() {
     }
 }
 
-async function loadProducts(categoryId = null, search = '') {
+async function loadListings() {
     try {
-        let url = `${API_URL}/api/products`;
-        const params = new URLSearchParams();
-
-        if (categoryId) params.append('category_id', categoryId);
-        if (search) params.append('search', search);
-
-        if (params.toString()) {
-            url += '?' + params.toString();
-        }
-
-        const response = await fetch(url);
-        currentProducts = await response.json() || [];
-
-        displayProducts(currentProducts);
+        const response = await fetch(`${API_URL}/api/listings`);
+        allListings = await response.json() || [];
+        displayListings(allListings);
     } catch (error) {
-        console.error('Failed to load products:', error);
+        console.error('Failed to load listings:', error);
     }
 }
 
-function displayProducts(products) {
-    const grid = document.getElementById('productsGrid');
+function displayListings(listings) {
+    const grid = document.getElementById('listingsGrid');
     grid.innerHTML = '';
 
-    if (!products || products.length === 0) {
+    if (!listings || listings.length === 0) {
         grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Brak produktów</p>';
         return;
     }
 
-    products.forEach(product => {
-        const stockStatus = product.stock <= 5 ? ' low' : '';
-        const stockText = product.stock <= 0 ? 'Niedostępny' :
-                         product.stock <= 5 ? `Tylko ${product.stock} szt.` :
+    listings.forEach(listing => {
+        const stockStatus = listing.quantity <= 5 ? ' low' : '';
+        const stockText = listing.quantity <= 0 ? 'Niedostępny' :
+                         listing.quantity <= 5 ? `Tylko ${listing.quantity} szt.` :
                          'Dostępny';
+
+        const primaryPhoto = listing.photos?.find(p => p.is_primary)?.url || 'https://via.placeholder.com/200?text=No+Image';
 
         const card = document.createElement('div');
         card.className = 'product-card';
         card.innerHTML = `
-            <img src="${product.image_url}" alt="${product.name}" class="product-image" />
+            <img src="${primaryPhoto}" alt="${listing.title}" class="product-image" />
             <div class="product-info">
-                <div class="product-name">${product.name}</div>
-                <div class="product-price">${product.price.toFixed(2)} zł</div>
-                <div class="product-rating">⭐ ${product.rating.toFixed(1)} (${product.reviews_count})</div>
+                <div class="product-name">${listing.title}</div>
+                <div class="product-price">${listing.price.toFixed(2)} zł</div>
+                <div class="product-rating">⭐ ${listing.avg_rating?.toFixed(1) || 'Brak'}</div>
                 <div class="product-stock${stockStatus}">${stockText}</div>
                 <div class="product-buttons">
-                    <button class="btn-view" onclick="showProductDetail(${product.id})">Szczegóły</button>
-                    ${product.stock > 0 ?
-                        `<button class="btn-add" onclick="quickAddToCart(${product.id}, 1)">Dodaj</button>` :
+                    <button class="btn-view" onclick="showListingDetail('${listing.id}')">Szczegóły</button>
+                    ${listing.quantity > 0 ?
+                        `<button class="btn-add" onclick="quickAddToCart('${listing.id}', 1)">Dodaj</button>` :
                         `<button class="btn-add" disabled style="opacity: 0.5;">Brak</button>`
                     }
                 </div>
@@ -107,79 +83,70 @@ function displayProducts(products) {
     });
 }
 
-function filterProducts() {
+function filterListings() {
     const categoryId = document.getElementById('categoryFilter').value;
     const search = document.getElementById('searchInput').value;
-    const maxPrice = document.getElementById('priceFilter').value;
 
-    document.getElementById('priceValue').textContent = maxPrice;
-
-    let filtered = currentProducts;
+    let filtered = allListings;
 
     if (categoryId) {
-        filtered = filtered.filter(p => p.category_id == categoryId);
+        filtered = filtered.filter(l => l.category_id === categoryId);
     }
 
     if (search) {
         const searchLower = search.toLowerCase();
-        filtered = filtered.filter(p =>
-            p.name.toLowerCase().includes(searchLower) ||
-            p.description.toLowerCase().includes(searchLower)
+        filtered = filtered.filter(l =>
+            l.title.toLowerCase().includes(searchLower) ||
+            l.description.toLowerCase().includes(searchLower)
         );
     }
 
-    filtered = filtered.filter(p => p.price <= maxPrice);
-
-    displayProducts(filtered);
+    displayListings(filtered);
 }
 
 function resetFilters() {
     document.getElementById('categoryFilter').value = '';
     document.getElementById('searchInput').value = '';
-    document.getElementById('priceFilter').value = '500';
-    document.getElementById('priceValue').textContent = '500';
-    loadProducts();
+    loadListings();
 }
 
-async function showProductDetail(productId) {
+async function showListingDetail(listingId) {
     try {
-        const response = await fetch(`${API_URL}/api/products/${productId}`);
-        const product = await response.json();
+        const response = await fetch(`${API_URL}/api/listings/${listingId}`);
+        const listing = await response.json();
 
-        const modal = document.getElementById('productModal');
-        const detail = document.getElementById('productDetail');
+        const modal = document.getElementById('listingModal');
+        const detail = document.getElementById('listingDetail');
+
+        const primaryPhoto = listing.photos?.find(p => p.is_primary)?.url || 'https://via.placeholder.com/200';
 
         detail.innerHTML = `
-            <div class="product-detail">
-                <img src="${product.image_url}" alt="${product.name}" class="product-detail-image" />
-                <div class="product-detail-info">
-                    <h2>${product.name}</h2>
-                    <div class="product-detail-price">${product.price.toFixed(2)} zł</div>
+            <div class="listing-detail">
+                <img src="${primaryPhoto}" alt="${listing.title}" class="listing-detail-image" />
+                <div class="listing-detail-info">
+                    <h2>${listing.title}</h2>
+                    <div class="listing-detail-price">${listing.price.toFixed(2)} zł</div>
 
-                    <div class="product-detail-meta">
+                    <div class="listing-detail-meta">
                         <div class="meta-item">
                             <span class="meta-label">Ocena</span>
-                            <span class="meta-value">⭐ ${product.rating.toFixed(1)}</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Opinii</span>
-                            <span class="meta-value">${product.reviews_count}</span>
+                            <span class="meta-value">⭐ ${listing.avg_rating?.toFixed(1) || 'Brak'}</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Dostępność</span>
-                            <span class="meta-value">${product.stock > 0 ? `${product.stock} szt.` : 'Niedostępny'}</span>
+                            <span class="meta-value">${listing.quantity > 0 ? `${listing.quantity} szt.` : 'Niedostępny'}</span>
                         </div>
                     </div>
 
-                    <p class="product-detail-description">${product.description}</p>
+                    <p class="listing-detail-description">${listing.description}</p>
 
-                    ${product.stock > 0 ? `
+                    ${listing.quantity > 0 ? `
                         <div class="quantity-selector">
                             <button class="quantity-btn" onclick="decreaseQty()">-</button>
-                            <input type="number" id="detailQuantity" class="quantity-input" value="1" min="1" max="${product.stock}" />
-                            <button class="quantity-btn" onclick="increaseQty(${product.stock})">+</button>
+                            <input type="number" id="detailQuantity" class="quantity-input" value="1" min="1" max="${listing.quantity}" />
+                            <button class="quantity-btn" onclick="increaseQty(${listing.quantity})">+</button>
                         </div>
-                        <button class="btn-add-detail" onclick="addToCartFromDetail(${product.id})">Dodaj do koszyka</button>
+                        <button class="btn-add-detail" onclick="addToCartFromDetail('${listing.id}')">Dodaj do koszyka</button>
                     ` : `
                         <button class="btn-add-detail" disabled style="opacity: 0.5;">Niedostępny</button>
                     `}
@@ -189,12 +156,12 @@ async function showProductDetail(productId) {
 
         modal.classList.add('active');
     } catch (error) {
-        console.error('Failed to load product detail:', error);
+        console.error('Failed to load listing detail:', error);
     }
 }
 
-function closeProductDetail() {
-    document.getElementById('productModal').classList.remove('active');
+function closeListingDetail() {
+    document.getElementById('listingModal').classList.remove('active');
 }
 
 function decreaseQty() {
@@ -207,124 +174,96 @@ function increaseQty(max) {
     if (input.value < max) input.value = parseInt(input.value) + 1;
 }
 
-async function addToCartFromDetail(productId) {
+async function addToCartFromDetail(listingId) {
     const quantity = parseInt(document.getElementById('detailQuantity').value);
-    await addToCart(productId, quantity);
-    closeProductDetail();
+    await addToCart(listingId, quantity);
+    closeListingDetail();
 }
 
-async function quickAddToCart(productId, quantity) {
-    await addToCart(productId, quantity);
+async function quickAddToCart(listingId, quantity) {
+    await addToCart(listingId, quantity);
 }
 
-async function addToCart(productId, quantity) {
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/cart`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ product_id: productId, quantity }),
-        });
+async function addToCart(listingId, quantity) {
+    const existingItem = cart.find(item => item.listing_id === listingId);
 
-        if (response.ok) {
-            loadCart();
-            alert('Dodano do koszyka!');
-        }
-    } catch (error) {
-        console.error('Failed to add to cart:', error);
-        alert('Błąd przy dodawaniu do koszyka');
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        cart.push({ listing_id: listingId, quantity });
     }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartUI();
+    alert('Dodano do koszyka!');
 }
 
 async function loadCart() {
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_URL}/api/cart`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        currentCart = await response.json() || [];
-        updateCartUI();
-    } catch (error) {
-        console.error('Failed to load cart:', error);
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+        cart = JSON.parse(savedCart);
     }
+    updateCartUI();
 }
 
 function updateCartUI() {
-    document.getElementById('cartCount').textContent = currentCart.length;
+    document.getElementById('cartCount').textContent = cart.length;
 
     const cartList = document.getElementById('cartList');
     cartList.innerHTML = '';
 
-    if (currentCart.length === 0) {
+    if (cart.length === 0) {
         cartList.innerHTML = '<div class="cart-empty">Koszyk jest pusty</div>';
         document.getElementById('cartTotal').textContent = '0,00 zł';
         return;
     }
 
     let total = 0;
-    currentCart.forEach(item => {
-        total += item.product.price * item.quantity;
+    cart.forEach(item => {
+        const listing = allListings.find(l => l.id === item.listing_id);
+        if (listing) {
+            total += listing.price * item.quantity;
 
-        const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item';
-        cartItem.innerHTML = `
-            <img src="${item.product.image_url}" alt="${item.product.name}" class="cart-item-image" />
-            <div class="cart-item-info">
-                <h4>${item.product.name}</h4>
-                <p>${item.product.price.toFixed(2)} zł × ${item.quantity}</p>
-            </div>
-            <div class="cart-item-quantity">
-                <button class="quantity-sm" onclick="updateCartQuantity(${item.id}, ${item.quantity - 1})">-</button>
-                <span>${item.quantity}</span>
-                <button class="quantity-sm" onclick="updateCartQuantity(${item.id}, ${item.quantity + 1})">+</button>
-            </div>
-            <button class="cart-item-remove" onclick="removeFromCart(${item.id})">✕</button>
-        `;
-        cartList.appendChild(cartItem);
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item';
+            cartItem.innerHTML = `
+                <img src="${listing.photos?.[0]?.url || 'https://via.placeholder.com/200'}" alt="${listing.title}" class="cart-item-image" />
+                <div class="cart-item-info">
+                    <h4>${listing.title}</h4>
+                    <p>${listing.price.toFixed(2)} zł × ${item.quantity}</p>
+                </div>
+                <div class="cart-item-quantity">
+                    <button class="quantity-sm" onclick="updateCartQuantity('${listing.id}', ${item.quantity - 1})">-</button>
+                    <span>${item.quantity}</span>
+                    <button class="quantity-sm" onclick="updateCartQuantity('${listing.id}', ${item.quantity + 1})">+</button>
+                </div>
+                <button class="cart-item-remove" onclick="removeFromCart('${listing.id}')">✕</button>
+            `;
+            cartList.appendChild(cartItem);
+        }
     });
 
     document.getElementById('cartTotal').textContent = total.toFixed(2) + ' zł';
 }
 
-async function updateCartQuantity(cartItemId, newQuantity) {
+function updateCartQuantity(listingId, newQuantity) {
     if (newQuantity <= 0) {
-        await removeFromCart(cartItemId);
+        removeFromCart(listingId);
         return;
     }
 
-    try {
-        const token = localStorage.getItem('access_token');
-        await fetch(`${API_URL}/api/cart/${cartItemId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ quantity: newQuantity }),
-        });
-
-        loadCart();
-    } catch (error) {
-        console.error('Failed to update cart:', error);
+    const item = cart.find(i => i.listing_id === listingId);
+    if (item) {
+        item.quantity = newQuantity;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartUI();
     }
 }
 
-async function removeFromCart(cartItemId) {
-    try {
-        const token = localStorage.getItem('access_token');
-        await fetch(`${API_URL}/api/cart/${cartItemId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        loadCart();
-    } catch (error) {
-        console.error('Failed to remove from cart:', error);
-    }
+function removeFromCart(listingId) {
+    cart = cart.filter(i => i.listing_id !== listingId);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartUI();
 }
 
 function openCart() {
@@ -336,11 +275,31 @@ function closeCart() {
 }
 
 async function handleCheckout() {
-    if (currentCart.length === 0) {
+    if (cart.length === 0) {
         alert('Koszyk jest pusty');
         return;
     }
+
+    // Redirect to checkout
     window.location.href = 'checkout.html';
+}
+
+async function checkIfSeller() {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+            const user = await response.json();
+            if (user.is_seller) {
+                document.getElementById('sellerLink').style.display = 'inline-block';
+            }
+        }
+    } catch (error) {
+        // Not a seller
+    }
 }
 
 function logout() {

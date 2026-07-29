@@ -27,10 +27,6 @@
                         placeholder="Hasło"
                         required
                     />
-                    <label class="checkbox">
-                        <input type="checkbox" id="rememberMe" />
-                        <span>Zapamiętaj mnie (30 dni)</span>
-                    </label>
                     <button type="submit">Zaloguj</button>
                     <p class="error" id="loginError"></p>
                 </form>
@@ -49,6 +45,17 @@
                         id="registerEmail"
                         placeholder="Email"
                         required
+                    />
+                    <input
+                        type="text"
+                        id="registerUsername"
+                        placeholder="Nazwa użytkownika"
+                        required
+                    />
+                    <input
+                        type="text"
+                        id="registerFullName"
+                        placeholder="Imię i nazwisko"
                     />
                     <input
                         type="password"
@@ -70,14 +77,6 @@
                     Masz już konto?
                     <a href="#" onclick="toggleForms(event)">Zaloguj się</a>
                 </p>
-            </div>
-
-            <!-- Dashboard (After Login) -->
-            <div id="dashboard" class="form-container">
-                <h2>Dashboard</h2>
-                <p>Witaj, <strong id="userEmail"></strong>!</p>
-                <p id="userData"></p>
-                <button onclick="logout()">Wyloguj</button>
             </div>
         </div>
     </div>
