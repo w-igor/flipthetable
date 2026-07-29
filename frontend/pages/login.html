@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zaloguj się — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body>
+  <div class="auth-topbar">
+    <a href="../index.html" class="auth-logo">Flip<span>TheTable</span></a>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>Zaloguj się</h1>
+      <p class="auth-subtitle">Wróć do swoich zakupów i sklepów</p>
+
+      <div class="auth-banner error" id="errorBanner"></div>
+      <div class="auth-banner success" id="successBanner"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="auth-field">
+          <label for="email">Adres e-mail</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+          <div class="auth-field-error" id="emailError"></div>
+        </div>
+
+        <div class="auth-field auth-password-row">
+          <label for="password">Hasło</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+          <button type="button" class="auth-toggle-password" data-target="password">Pokaż</button>
+          <div class="auth-field-error" id="passwordError"></div>
+        </div>
+
+        <label class="auth-remember-row">
+          <input type="checkbox" id="remember" name="remember" />
+          Zapamiętaj mnie na 30 dni
+        </label>
+
+        <button type="submit" class="auth-submit" id="submitBtn">Zaloguj się</button>
+      </form>
+
+      <div class="auth-divider">lub</div>
+
+      <p class="auth-footer">
+        Nie masz konta? <a href="register.html">Zarejestruj się</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    initAuthPage('login');
+  </script>
+</body>
+</html>

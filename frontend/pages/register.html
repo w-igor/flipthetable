@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zarejestruj się — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body>
+  <div class="auth-topbar">
+    <a href="../index.html" class="auth-logo">Flip<span>TheTable</span></a>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>Stwórz konto</h1>
+      <p class="auth-subtitle">Dołącz i zacznij kupować lub sprzedawać</p>
+
+      <div class="auth-banner error" id="errorBanner"></div>
+      <div class="auth-banner success" id="successBanner"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="auth-field">
+          <label for="username">Nazwa użytkownika</label>
+          <input type="text" id="username" name="username" autocomplete="username" required />
+          <div class="auth-field-error" id="usernameError"></div>
+        </div>
+
+        <div class="auth-field">
+          <label for="email">Adres e-mail</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+          <div class="auth-field-error" id="emailError"></div>
+        </div>
+
+        <div class="auth-field auth-password-row">
+          <label for="password">Hasło</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required />
+          <button type="button" class="auth-toggle-password" data-target="password">Pokaż</button>
+          <div class="auth-field-error" id="passwordError"></div>
+        </div>
+
+        <div class="auth-field auth-password-row">
+          <label for="confirmPassword">Powtórz hasło</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required />
+          <button type="button" class="auth-toggle-password" data-target="confirmPassword">Pokaż</button>
+          <div class="auth-field-error" id="confirmPasswordError"></div>
+        </div>
+
+        <label class="auth-remember-row">
+          <input type="checkbox" id="isSeller" name="isSeller" />
+          Chcę też sprzedawać na FlipTheTable
+        </label>
+        <p class="auth-seller-note">Możesz to później zmienić w ustawieniach profilu.</p>
+
+        <button type="submit" class="auth-submit" id="submitBtn">Zarejestruj się</button>
+      </form>
+
+      <div class="auth-divider">lub</div>
+
+      <p class="auth-footer">
+        Masz już konto? <a href="login.html">Zaloguj się</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    initAuthPage('register');
+  </script>
+</body>
+</html>
