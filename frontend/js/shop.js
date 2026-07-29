@@ -320,14 +320,14 @@ function closeCart() {
 }
 
 async function handleCheckout() {
-    alert('Checkout w Stage 3 (Orders API) 🚀');
-}
-
-function goToAuthPage() {
-    alert('User profile page coming soon!');
+    if (currentCart.length === 0) {
+        alert('Koszyk jest pusty');
+        return;
+    }
+    window.location.href = 'checkout.html';
 }
 
 function logout() {
     localStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 }

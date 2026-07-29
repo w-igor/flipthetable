@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potwierdzenie zamówienia - FlipTheTable</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/order-confirmation.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">FlipTheTable</h1>
+        </div>
+    </header>
+
+    <main class="confirmation-container">
+        <div class="confirmation-content">
+            <div class="success-icon">✓</div>
+            <h1>Dziękujemy za zakupy!</h1>
+            <p class="order-number">Numer zamówienia: <strong id="orderNumber">...</strong></p>
+
+            <section class="order-details">
+                <h2>Szczegóły zamówienia</h2>
+                <div id="orderInfo" class="order-info">
+                    <!-- Order details loaded here -->
+                </div>
+            </section>
+
+            <section class="next-steps">
+                <h2>Co dalej?</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div>
+                            <h3>Potwierdzenie e-mail</h3>
+                            <p>Wyślemy Ci potwierdzenie zamówienia na adres e-mail</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div>
+                            <h3>Przygotowanie paczki</h3>
+                            <p>Sprzedawca przygotuje paczkę w ciągu 24 godzin</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div>
+                            <h3>Wysyłka</h3>
+                            <p>Otrzymasz numer śledzenia po wysyłce paczki</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div>
+                            <h3>Dostawa</h3>
+                            <p>Paczka dotrze w ciągu 1-3 dni roboczych</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="goToOrders()">Moje zamówienia</button>
+                <button class="btn-secondary" onclick="continueShopping()">Kontynuuj zakupy</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/order-confirmation.js"></script>
+</body>
+</html>

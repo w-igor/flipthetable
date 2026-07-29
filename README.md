@@ -33,6 +33,18 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Price filtering
 - ✅ Stock status display
 
+## Stage 3: Orders & Checkout ✅
+
+- ✅ Checkout page with shipping options
+- ✅ Order creation with cart validation
+- ✅ Stock management (automatic reduction)
+- ✅ Order confirmation page
+- ✅ Order history with filtering
+- ✅ Order statistics (total spent, pending orders)
+- ✅ Order detail modal
+- ✅ Order status tracking
+- ✅ Transaction handling (cart clear on success)
+
 ## Wymagania
 
 - Docker & Docker Compose

@@ -84,6 +84,13 @@ func main() {
 	mux.HandleFunc("PUT /api/cart/{id}", corsMiddleware(authMiddleware(handleUpdateCartItem)))
 	mux.HandleFunc("DELETE /api/cart/{id}", corsMiddleware(authMiddleware(handleRemoveFromCart)))
 
+	// Orders - Protected
+	mux.HandleFunc("POST /api/orders", corsMiddleware(authMiddleware(handleCreateOrder)))
+	mux.HandleFunc("GET /api/orders", corsMiddleware(authMiddleware(handleGetOrders)))
+	mux.HandleFunc("GET /api/orders/{id}", corsMiddleware(authMiddleware(handleGetOrder)))
+	mux.HandleFunc("PUT /api/orders/{id}", corsMiddleware(authMiddleware(handleUpdateOrderStatus)))
+	mux.HandleFunc("GET /api/orders/stats/summary", corsMiddleware(authMiddleware(handleGetOrderStats)))
+
 	log.Println("🚀 Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

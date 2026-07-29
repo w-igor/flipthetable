@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moje zamówienia - FlipTheTable</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/orders.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">FlipTheTable</h1>
+            <nav class="nav-links">
+                <a href="shop.html">← Wróć do sklepu</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="orders-container">
+        <div class="orders-header">
+            <h1>Moje zamówienia</h1>
+            <div class="order-stats">
+                <div class="stat">
+                    <span class="stat-label">Razem zamówień</span>
+                    <span class="stat-value" id="totalOrders">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Wydano</span>
+                    <span class="stat-value" id="totalSpent">0 zł</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">W oczekiwaniu</span>
+                    <span class="stat-value" id="pendingOrders">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="orders-filters">
+            <input type="text" id="searchFilter" placeholder="Szukaj po numerze zamówienia..." />
+            <select id="statusFilter" onchange="filterOrders()">
+                <option value="">Wszystkie statusy</option>
+                <option value="pending">Oczekujące</option>
+                <option value="confirmed">Potwierdzone</option>
+                <option value="shipped">Wysłane</option>
+                <option value="delivered">Dostarczone</option>
+                <option value="cancelled">Anulowane</option>
+            </select>
+        </div>
+
+        <div id="ordersList" class="orders-list">
+            <!-- Orders loaded here -->
+        </div>
+    </main>
+
+    <!-- Order Detail Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeOrderDetail()">&times;</span>
+            <div id="orderDetail" class="order-detail">
+                <!-- Order details loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/orders.js"></script>
+</body>
+</html>
