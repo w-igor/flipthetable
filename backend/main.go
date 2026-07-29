@@ -67,10 +67,22 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Auth
 	mux.HandleFunc("POST /auth/register", corsMiddleware(handleRegister))
 	mux.HandleFunc("POST /auth/login", corsMiddleware(handleLogin))
 	mux.HandleFunc("POST /auth/refresh", corsMiddleware(handleRefresh))
 	mux.HandleFunc("GET /auth/me", corsMiddleware(authMiddleware(handleMe)))
+
+	// Shop - Public
+	mux.HandleFunc("GET /api/categories", corsMiddleware(handleGetCategories))
+	mux.HandleFunc("GET /api/products", corsMiddleware(handleGetProducts))
+	mux.HandleFunc("GET /api/products/{id}", corsMiddleware(handleGetProduct))
+
+	// Cart - Protected
+	mux.HandleFunc("GET /api/cart", corsMiddleware(authMiddleware(handleGetCart)))
+	mux.HandleFunc("POST /api/cart", corsMiddleware(authMiddleware(handleAddToCart)))
+	mux.HandleFunc("PUT /api/cart/{id}", corsMiddleware(authMiddleware(handleUpdateCartItem)))
+	mux.HandleFunc("DELETE /api/cart/{id}", corsMiddleware(authMiddleware(handleRemoveFromCart)))
 
 	log.Println("🚀 Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))

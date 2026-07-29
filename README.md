@@ -23,6 +23,16 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ JWT authentication
 - ✅ Password hashing (bcrypt)
 
+## Stage 2: Shop & Catalog ✅
+
+- ✅ Product listing with filters
+- ✅ Category filtering
+- ✅ Search functionality
+- ✅ Product details modal
+- ✅ Shopping cart (add/remove/update)
+- ✅ Price filtering
+- ✅ Stock status display
+
 ## Wymagania
 
 - Docker & Docker Compose

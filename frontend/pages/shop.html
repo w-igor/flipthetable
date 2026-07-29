@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - FlipTheTable</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/shop.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">FlipTheTable</h1>
+            <nav class="nav-links">
+                <a href="#" onclick="goToAuthPage()">Profil</a>
+                <a href="#" class="cart-link" onclick="openCart()">🛒 Koszyk (<span id="cartCount">0</span>)</a>
+                <a href="#" onclick="logout()">Wyloguj</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Filters Sidebar -->
+        <aside class="sidebar">
+            <h3>Filtry</h3>
+
+            <div class="filter-group">
+                <label>Kategoria:</label>
+                <select id="categoryFilter" onchange="filterProducts()">
+                    <option value="">Wszystkie</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Cena:</label>
+                <input type="range" id="priceFilter" min="0" max="500" onchange="filterProducts()" />
+                <span>Do <strong id="priceValue">500</strong> zł</span>
+            </div>
+
+            <div class="filter-group">
+                <label>Szukaj:</label>
+                <input type="text" id="searchInput" placeholder="Nazwa produktu..." onkeyup="filterProducts()" />
+            </div>
+
+            <button class="btn-reset" onclick="resetFilters()">Resetuj filtry</button>
+        </aside>
+
+        <!-- Products Grid -->
+        <section class="products-section">
+            <h2>Produkty</h2>
+            <div id="productsGrid" class="products-grid">
+                <!-- Products loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCart()">&times;</span>
+            <h2>Koszyk</h2>
+            <div id="cartList" class="cart-list">
+                <!-- Cart items loaded here -->
+            </div>
+            <div class="cart-summary">
+                <p>Razem: <strong id="cartTotal">0,00 zł</strong></p>
+                <button class="btn-checkout" onclick="handleCheckout()">Złóż zamówienie</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content modal-large">
+            <span class="close" onclick="closeProductDetail()">&times;</span>
+            <div id="productDetail" class="product-detail">
+                <!-- Product details loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/shop.js"></script>
+</body>
+</html>

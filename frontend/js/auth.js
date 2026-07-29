@@ -102,6 +102,11 @@ function showDashboard(user) {
 
     document.getElementById('userEmail').textContent = user.email;
     document.getElementById('userData').textContent = JSON.stringify(user, null, 2);
+
+    // Redirect to shop after 1 second
+    setTimeout(() => {
+        window.location.href = 'pages/shop.html';
+    }, 1000);
 }
 
 async function fetchAndShowUser() {
