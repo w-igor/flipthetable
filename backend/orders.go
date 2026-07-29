@@ -2,57 +2,74 @@ package main
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
-	"log"
 	"net/http"
-	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Order struct {
-	ID        int         `json:"id"`
-	UserID    int         `json:"user_id"`
-	TotalPrice float64    `json:"total_price"`
-	Status    string      `json:"status"`
-	Items     []OrderItem `json:"items,omitempty"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID            string      `json:"id"`
+	BuyerID       string      `json:"buyer_id"`
+	ShopID        string      `json:"shop_id"`
+	Status        string      `json:"status"`
+	TotalAmount   float64     `json:"total_amount"`
+	Currency      string      `json:"currency"`
+	ShippingAddr  Address     `json:"shipping_addr"`
+	Note          string      `json:"note,omitempty"`
+	Items         []OrderItem `json:"items,omitempty"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
 type OrderItem struct {
-	ID              int     `json:"id"`
-	OrderID         int     `json:"order_id"`
-	ProductID       int     `json:"product_id"`
+	ID              string  `json:"id"`
+	OrderID         string  `json:"order_id"`
+	ListingID       string  `json:"listing_id"`
 	Quantity        int     `json:"quantity"`
-	PriceAtPurchase float64 `json:"price_at_purchase"`
-	Product         Product `json:"product,omitempty"`
+	UnitPrice       float64 `json:"unit_price"`
+	TitleSnapshot   string  `json:"title_snapshot"`
+	ListingDetail   Listing `json:"listing,omitempty"`
 }
 
-type CreateOrderRequest struct {
-	Items []struct {
-		ProductID int `json:"product_id"`
-		Quantity  int `json:"quantity"`
-	} `json:"items"`
+type Address struct {
+	FullName   string `json:"full_name"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
+	Phone      string `json:"phone"`
+}
+
+// JSONB support for PostgreSQL
+func (a Address) Value() (driver.Value, error) {
+	return json.Marshal(a)
+}
+
+func (a *Address) Scan(value interface{}) error {
+	return json.Unmarshal(value.([]byte), &a)
 }
 
 func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
-	email := r.Header.Get("X-Email")
+	userID := r.Header.Get("X-User-ID")
 
-	var req CreateOrderRequest
+	var req struct {
+		ShopID       string  `json:"shop_id"`
+		Items        []struct {
+			ListingID string `json:"listing_id"`
+			Quantity  int    `json:"quantity"`
+		} `json:"items"`
+		ShippingAddr Address `json:"shipping_addr"`
+		Note         string  `json:"note"`
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	// Get user ID
-	var userID int
-	err := db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	// Start transaction
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -60,43 +77,42 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	// Calculate total and validate products
-	var totalPrice float64
+	var totalAmount float64
 	orderItems := make([]OrderItem, 0)
 
 	for _, item := range req.Items {
-		var priceAtPurchase float64
-		var stock int
+		var price float64
+		var quantity int
 
 		err := tx.QueryRow(
-			"SELECT price, stock FROM products WHERE id = $1",
-			item.ProductID,
-		).Scan(&priceAtPurchase, &stock)
+			"SELECT price, quantity FROM listings WHERE id = $1",
+			item.ListingID,
+		).Scan(&price, &quantity)
 
 		if err != nil {
-			http.Error(w, "Product not found", http.StatusBadRequest)
+			http.Error(w, "Listing not found", http.StatusBadRequest)
 			return
 		}
 
-		if stock < item.Quantity {
+		if quantity < item.Quantity {
 			http.Error(w, "Insufficient stock", http.StatusBadRequest)
 			return
 		}
 
-		totalPrice += priceAtPurchase * float64(item.Quantity)
-
+		totalAmount += price * float64(item.Quantity)
 		orderItems = append(orderItems, OrderItem{
-			ProductID:       item.ProductID,
-			Quantity:        item.Quantity,
-			PriceAtPurchase: priceAtPurchase,
+			ListingID:     item.ListingID,
+			Quantity:      item.Quantity,
+			UnitPrice:     price,
 		})
 	}
 
-	// Create order
-	var orderID int
+	orderID := uuid.New().String()
+	shippingJSON, _ := json.Marshal(req.ShippingAddr)
+
 	err = tx.QueryRow(
-		"INSERT INTO orders (user_id, total_price, status) VALUES ($1, $2, 'pending') RETURNING id",
-		userID, totalPrice,
+		"INSERT INTO orders (id, buyer_id, shop_id, total_amount, shipping_addr, note) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		orderID, userID, req.ShopID, totalAmount, shippingJSON, req.Note,
 	).Scan(&orderID)
 
 	if err != nil {
@@ -104,11 +120,11 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add order items and update stock
 	for _, item := range orderItems {
+		itemID := uuid.New().String()
 		_, err := tx.Exec(
-			"INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) VALUES ($1, $2, $3, $4)",
-			orderID, item.ProductID, item.Quantity, item.PriceAtPurchase,
+			"INSERT INTO order_items (id, order_id, listing_id, quantity, unit_price, title_snapshot) VALUES ($1, $2, $3, $4, $5, (SELECT title FROM listings WHERE id = $6))",
+			itemID, orderID, item.ListingID, item.Quantity, item.UnitPrice, item.ListingID,
 		)
 
 		if err != nil {
@@ -116,57 +132,30 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Reduce stock
-		_, err = tx.Exec(
-			"UPDATE products SET stock = stock - $1 WHERE id = $2",
-			item.Quantity, item.ProductID,
-		)
-
-		if err != nil {
-			http.Error(w, "Failed to update stock", http.StatusInternalServerError)
-			return
-		}
+		tx.Exec("UPDATE listings SET quantity = quantity - $1 WHERE id = $2", item.Quantity, item.ListingID)
 	}
 
-	// Clear user's cart
-	_, err = tx.Exec("DELETE FROM cart_items WHERE user_id = $1", userID)
-	if err != nil {
-		http.Error(w, "Failed to clear cart", http.StatusInternalServerError)
-		return
-	}
-
-	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 
-	// Send real-time notification
-	notifyOrderCreated(email, orderID, totalPrice)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":           orderID,
-		"total_price":  totalPrice,
-		"status":       "pending",
-		"created_at":   time.Now(),
+		"id":            orderID,
+		"total_amount":  totalAmount,
+		"status":        "pending",
+		"created_at":    time.Now(),
 	})
 }
 
 func handleGetOrders(w http.ResponseWriter, r *http.Request) {
-	email := r.Header.Get("X-Email")
-
-	var userID int
-	err := db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
+	userID := r.Header.Get("X-User-ID")
 
 	rows, err := db.Query(`
-		SELECT id, user_id, total_price, status, created_at, updated_at
+		SELECT id, buyer_id, shop_id, status, total_amount, currency, shipping_addr, note, created_at, updated_at
 		FROM orders
-		WHERE user_id = $1
+		WHERE buyer_id = $1
 		ORDER BY created_at DESC
 	`, userID)
 
@@ -179,32 +168,13 @@ func handleGetOrders(w http.ResponseWriter, r *http.Request) {
 	var orders []Order
 	for rows.Next() {
 		var order Order
-		if err := rows.Scan(&order.ID, &order.UserID, &order.TotalPrice, &order.Status, &order.CreatedAt, &order.UpdatedAt); err != nil {
+		var shippingJSON []byte
+
+		if err := rows.Scan(&order.ID, &order.BuyerID, &order.ShopID, &order.Status, &order.TotalAmount, &order.Currency, &shippingJSON, &order.Note, &order.CreatedAt, &order.UpdatedAt); err != nil {
 			continue
 		}
 
-		// Get order items
-		itemRows, err := db.Query(`
-			SELECT oi.id, oi.order_id, oi.product_id, oi.quantity, oi.price_at_purchase,
-				   p.id, p.category_id, p.name, p.description, p.price, p.stock, p.image_url, p.seller_id, p.rating, p.reviews_count
-			FROM order_items oi
-			JOIN products p ON oi.product_id = p.id
-			WHERE oi.order_id = $1
-		`, order.ID)
-
-		if err == nil {
-			defer itemRows.Close()
-			for itemRows.Next() {
-				var item OrderItem
-				var product Product
-				if err := itemRows.Scan(&item.ID, &item.OrderID, &item.ProductID, &item.Quantity, &item.PriceAtPurchase,
-					&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.Stock, &product.ImageURL, &product.SellerID, &product.Rating, &product.ReviewsCount); err == nil {
-					item.Product = product
-					order.Items = append(order.Items, item)
-				}
-			}
-		}
-
+		json.Unmarshal(shippingJSON, &order.ShippingAddr)
 		orders = append(orders, order)
 	}
 
@@ -213,137 +183,25 @@ func handleGetOrders(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetOrder(w http.ResponseWriter, r *http.Request) {
-	email := r.Header.Get("X-Email")
+	userID := r.Header.Get("X-User-ID")
 	orderID := r.PathValue("id")
 
-	var userID int
-	err := db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
 	var order Order
-	err = db.QueryRow(`
-		SELECT id, user_id, total_price, status, created_at, updated_at
+	var shippingJSON []byte
+
+	err := db.QueryRow(`
+		SELECT id, buyer_id, shop_id, status, total_amount, currency, shipping_addr, note, created_at, updated_at
 		FROM orders
-		WHERE id = $1 AND user_id = $2
-	`, orderID, userID).Scan(&order.ID, &order.UserID, &order.TotalPrice, &order.Status, &order.CreatedAt, &order.UpdatedAt)
+		WHERE id = $1 AND buyer_id = $2
+	`, orderID, userID).Scan(&order.ID, &order.BuyerID, &order.ShopID, &order.Status, &order.TotalAmount, &order.Currency, &shippingJSON, &order.Note, &order.CreatedAt, &order.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, "Order not found", http.StatusNotFound)
 		return
 	}
 
-	// Get order items
-	rows, err := db.Query(`
-		SELECT oi.id, oi.order_id, oi.product_id, oi.quantity, oi.price_at_purchase,
-			   p.id, p.category_id, p.name, p.description, p.price, p.stock, p.image_url, p.seller_id, p.rating, p.reviews_count
-		FROM order_items oi
-		JOIN products p ON oi.product_id = p.id
-		WHERE oi.order_id = $1
-	`, order.ID)
-
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var item OrderItem
-			var product Product
-			if err := rows.Scan(&item.ID, &item.OrderID, &item.ProductID, &item.Quantity, &item.PriceAtPurchase,
-				&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.Stock, &product.ImageURL, &product.SellerID, &product.Rating, &product.ReviewsCount); err == nil {
-				item.Product = product
-				order.Items = append(order.Items, item)
-			}
-		}
-	}
+	json.Unmarshal(shippingJSON, &order.ShippingAddr)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(order)
-}
-
-func handleUpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
-	orderID := r.PathValue("id")
-
-	var req struct {
-		Status string `json:"status"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-
-	validStatuses := map[string]bool{"pending": true, "confirmed": true, "shipped": true, "delivered": true, "cancelled": true}
-	if !validStatuses[req.Status] {
-		http.Error(w, "Invalid status", http.StatusBadRequest)
-		return
-	}
-
-	// Get user email from order
-	var userEmail string
-	err := db.QueryRow(
-		"SELECT u.email FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1",
-		orderID,
-	).Scan(&userEmail)
-
-	if err != nil {
-		http.Error(w, "Order not found", http.StatusNotFound)
-		return
-	}
-
-	_, err = db.Exec(
-		"UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2",
-		req.Status, orderID,
-	)
-
-	if err != nil {
-		http.Error(w, "Failed to update order", http.StatusInternalServerError)
-		return
-	}
-
-	// Send real-time notification
-	orderIDInt, _ := strconv.Atoi(orderID)
-	notifyOrderStatusChange(userEmail, orderIDInt, req.Status)
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Order updated", "status": req.Status})
-}
-
-func handleGetOrderStats(w http.ResponseWriter, r *http.Request) {
-	email := r.Header.Get("X-Email")
-
-	var userID int
-	err := db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	var stats struct {
-		TotalOrders    int     `json:"total_orders"`
-		TotalSpent     float64 `json:"total_spent"`
-		AvgOrderValue  float64 `json:"avg_order_value"`
-		PendingOrders  int     `json:"pending_orders"`
-		DeliveredCount int     `json:"delivered_count"`
-	}
-
-	// Get stats
-	err = db.QueryRow(`
-		SELECT
-			COUNT(*),
-			COALESCE(SUM(total_price), 0),
-			COALESCE(AVG(total_price), 0),
-			COUNT(CASE WHEN status = 'pending' THEN 1 END),
-			COUNT(CASE WHEN status = 'delivered' THEN 1 END)
-		FROM orders
-		WHERE user_id = $1
-	`, userID).Scan(&stats.TotalOrders, &stats.TotalSpent, &stats.AvgOrderValue, &stats.PendingOrders, &stats.DeliveredCount)
-
-	if err != nil && err != sql.ErrNoRows {
-		log.Println("Error getting order stats:", err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
 }
