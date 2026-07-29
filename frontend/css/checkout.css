@@ -1,0 +1,194 @@
+:root {
+  --etsy-orange: #f1641e;
+  --etsy-black: #222222;
+  --etsy-gray: #6b6b6b;
+  --etsy-border: #d5d0c9;
+  --etsy-bg: #f6f4ef;
+  --etsy-card: #ffffff;
+  --radius: 8px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--etsy-bg);
+  color: var(--etsy-black);
+}
+
+.checkout-header {
+  background: var(--etsy-card);
+  border-bottom: 1px solid var(--etsy-border);
+  padding: 16px 24px;
+}
+
+.checkout-header a {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--etsy-black);
+  text-decoration: none;
+}
+
+.checkout-header a span {
+  color: var(--etsy-orange);
+}
+
+.checkout-layout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.checkout-form-section,
+.checkout-summary-section {
+  background: var(--etsy-card);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.checkout-form-section {
+  flex: 1.4;
+}
+
+.checkout-summary-section {
+  flex: 1;
+  position: sticky;
+  top: 24px;
+}
+
+.checkout-form-section h2,
+.checkout-summary-section h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+
+.checkout-field {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-field label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.checkout-field input,
+.checkout-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.checkout-field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.checkout-field-row .checkout-field {
+  flex: 1;
+}
+
+.checkout-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--etsy-orange);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.checkout-submit-btn:disabled {
+  background: #e8b79c;
+  cursor: not-allowed;
+}
+
+.checkout-banner {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.checkout-banner.show {
+  display: block;
+}
+
+.checkout-banner.error {
+  background: #fdecea;
+  color: #c0392b;
+  border: 1px solid #f5c6cb;
+}
+
+.summary-shop-group {
+  margin-bottom: 16px;
+}
+
+.summary-shop-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--etsy-gray);
+  margin-bottom: 8px;
+}
+
+.summary-line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.summary-line img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.summary-line-title {
+  flex: 1;
+}
+
+.summary-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 2px solid var(--etsy-black);
+}
+
+.checkout-empty {
+  text-align: center;
+  padding: 64px 16px;
+  color: var(--etsy-gray);
+}
+
+@media (max-width: 780px) {
+  .checkout-layout {
+    flex-direction: column;
+  }
+  .checkout-summary-section {
+    position: static;
+    width: 100%;
+  }
+}

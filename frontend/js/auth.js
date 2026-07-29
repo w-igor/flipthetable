@@ -90,8 +90,9 @@ function initLoginPage() {
 
       storeSession(data, remember);
       showBanner('success', 'Zalogowano pomyślnie. Przekierowywanie...');
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
       setTimeout(() => {
-        window.location.href = '../index.html';
+        window.location.href = redirect ? redirect : '../index.html';
       }, 800);
     } catch (err) {
       showBanner('error', 'Nie udało się połączyć z serwerem. Spróbuj ponownie.');

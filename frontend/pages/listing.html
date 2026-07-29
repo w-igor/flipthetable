@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Produkt — FlipTheTable</title>
   <link rel="stylesheet" href="../css/shop.css" />
+  <link rel="stylesheet" href="../css/cart.css" />
   <style>
     .listing-detail {
       max-width: 1000px;
@@ -38,6 +39,27 @@
       line-height: 1.6;
       margin-bottom: 16px;
     }
+    .listing-detail-add-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .listing-detail-qty {
+      width: 64px;
+      padding: 8px;
+      border: 1px solid #d5d0c9;
+      border-radius: 6px;
+    }
+    .listing-detail-add-btn {
+      padding: 12px 24px;
+      background: #f1641e;
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-weight: 700;
+      cursor: pointer;
+    }
     .back-link {
       display: inline-block;
       margin: 16px 24px 0;
@@ -54,12 +76,32 @@
 <body>
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
+    <div class="shop-header-actions" style="margin-left:auto;">
+      <button id="cartToggleBtn" class="cart-icon-btn">🛒<span id="cartCount" class="cart-count-badge">0</span></button>
+    </div>
   </header>
+
+  <div id="cartOverlay" class="cart-overlay"></div>
+  <div id="cartDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>Koszyk</h3>
+      <button id="closeCartBtn">✕</button>
+    </div>
+    <div id="cartItemsList" class="cart-items-list"></div>
+    <div class="cart-drawer-footer">
+      <div class="cart-total-row">
+        <span>Razem:</span>
+        <span id="cartTotalAmount">0.00 PLN</span>
+      </div>
+      <a href="checkout.html" class="cart-checkout-btn">Przejdź do kasy</a>
+    </div>
+  </div>
 
   <a href="shop.html" class="back-link">‹ Wróć do katalogu</a>
 
   <div id="listingContainer" class="listing-detail"></div>
 
+  <script src="../js/cart.js"></script>
   <script>
     const API_URL = 'http://localhost:8080';
 
@@ -97,8 +139,24 @@
             <p class="listing-detail-price">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
             <p class="listing-detail-desc">${escapeHtml(item.description || '')}</p>
             <p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>
+            ${item.quantity > 0 ? `
+              <div class="listing-detail-add-row">
+                <input type="number" id="qtyInput" class="listing-detail-qty" value="1" min="1" max="${item.quantity}" />
+                <button id="addToCartBtn" class="listing-detail-add-btn">Dodaj do koszyka</button>
+              </div>
+            ` : ''}
           </div>
         `;
+
+        const addBtn = document.getElementById('addToCartBtn');
+        if (addBtn) {
+          addBtn.addEventListener('click', () => {
+            const qty = Math.max(1, Math.min(item.quantity, parseInt(document.getElementById('qtyInput').value, 10) || 1));
+            addToCart(item.id, qty);
+            addBtn.textContent = 'Dodano ✓';
+            setTimeout(() => { addBtn.textContent = 'Dodaj do koszyka'; }, 1200);
+          });
+        }
       } catch (err) {
         container.innerHTML = '<p>Błąd ładowania produktu.</p>';
       }

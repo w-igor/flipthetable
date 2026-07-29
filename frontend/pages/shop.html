@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Katalog produktów — FlipTheTable</title>
   <link rel="stylesheet" href="../css/shop.css" />
+  <link rel="stylesheet" href="../css/cart.css" />
 </head>
 <body>
   <header class="shop-header">
@@ -16,8 +17,25 @@
     <div class="shop-header-actions" id="headerActions">
       <a href="login.html">Zaloguj się</a>
       <a href="register.html">Zarejestruj się</a>
+      <button id="cartToggleBtn" class="cart-icon-btn">🛒<span id="cartCount" class="cart-count-badge">0</span></button>
     </div>
   </header>
+
+  <div id="cartOverlay" class="cart-overlay"></div>
+  <div id="cartDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>Koszyk</h3>
+      <button id="closeCartBtn">✕</button>
+    </div>
+    <div id="cartItemsList" class="cart-items-list"></div>
+    <div class="cart-drawer-footer">
+      <div class="cart-total-row">
+        <span>Razem:</span>
+        <span id="cartTotalAmount">0.00 PLN</span>
+      </div>
+      <a href="checkout.html" class="cart-checkout-btn">Przejdź do kasy</a>
+    </div>
+  </div>
 
   <div class="shop-layout">
     <aside class="shop-filters">
@@ -60,6 +78,7 @@
     </main>
   </div>
 
+  <script src="../js/cart.js"></script>
   <script src="../js/shop.js"></script>
 </body>
 </html>

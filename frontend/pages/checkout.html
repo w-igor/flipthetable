@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kasa — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/checkout.css" />
+</head>
+<body>
+  <header class="checkout-header">
+    <a href="../index.html">Flip<span>TheTable</span></a>
+  </header>
+
+  <div id="checkoutEmpty" class="checkout-empty" style="display:none;">
+    Twój koszyk jest pusty. <a href="shop.html">Wróć do katalogu</a>.
+  </div>
+
+  <div class="checkout-layout" id="checkoutLayout">
+    <section class="checkout-form-section">
+      <h2>Dane wysyłki</h2>
+      <div class="checkout-banner error" id="errorBanner"></div>
+
+      <form id="checkoutForm" novalidate>
+        <div class="checkout-field">
+          <label for="fullName">Imię i nazwisko</label>
+          <input type="text" id="fullName" required />
+        </div>
+        <div class="checkout-field">
+          <label for="address">Adres</label>
+          <input type="text" id="address" required />
+        </div>
+        <div class="checkout-field-row">
+          <div class="checkout-field">
+            <label for="city">Miasto</label>
+            <input type="text" id="city" required />
+          </div>
+          <div class="checkout-field">
+            <label for="postalCode">Kod pocztowy</label>
+            <input type="text" id="postalCode" required />
+          </div>
+        </div>
+        <div class="checkout-field-row">
+          <div class="checkout-field">
+            <label for="country">Kraj</label>
+            <input type="text" id="country" value="Polska" required />
+          </div>
+          <div class="checkout-field">
+            <label for="phone">Telefon</label>
+            <input type="tel" id="phone" required />
+          </div>
+        </div>
+        <div class="checkout-field">
+          <label for="note">Notatka do zamówienia (opcjonalnie)</label>
+          <textarea id="note" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="checkout-submit-btn" id="submitBtn">Złóż zamówienie</button>
+      </form>
+    </section>
+
+    <section class="checkout-summary-section">
+      <h2>Podsumowanie</h2>
+      <div id="summaryContent"></div>
+      <div class="summary-total-row">
+        <span>Razem</span>
+        <span id="summaryTotal">0.00 PLN</span>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/checkout.js"></script>
+</body>
+</html>

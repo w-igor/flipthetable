@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zamówienie złożone — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/checkout.css" />
+  <style>
+    .confirmation-wrapper {
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+    .confirmation-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .confirmation-header .check {
+      font-size: 48px;
+    }
+    .confirmation-header h1 {
+      margin: 8px 0 4px;
+    }
+    .order-card {
+      background: #fff;
+      border: 1px solid #d5d0c9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .order-card-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #6b6b6b;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .order-line {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .order-line img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .order-line-title {
+      flex: 1;
+    }
+    .order-total {
+      text-align: right;
+      font-weight: 700;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+    .confirmation-actions {
+      text-align: center;
+      margin-top: 24px;
+    }
+    .confirmation-actions a {
+      color: #222;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header class="checkout-header">
+    <a href="../index.html">Flip<span>TheTable</span></a>
+  </header>
+
+  <div class="confirmation-wrapper">
+    <div class="confirmation-header">
+      <div class="check">✅</div>
+      <h1>Dziękujemy za zamówienie!</h1>
+      <p>Poniżej znajdziesz podsumowanie.</p>
+    </div>
+
+    <div id="ordersContainer"></div>
+
+    <div class="confirmation-actions">
+      <a href="shop.html">Wróć do katalogu</a>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:8080';
+
+    function getAccessToken() {
+      return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadOrders() {
+      const container = document.getElementById('ordersContainer');
+      const ids = new URLSearchParams(window.location.search).get('ids');
+      const token = getAccessToken();
+
+      if (!ids || !token) {
+        container.innerHTML = '<p style="text-align:center;">Brak danych zamówienia.</p>';
+        return;
+      }
+
+      const orderIds = ids.split(',').filter(Boolean);
+
+      for (const id of orderIds) {
+        try {
+          const res = await fetch(`${API_URL}/orders/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) continue;
+          const order = await res.json();
+
+          const linesHtml = (order.items || [])
+            .map(
+              (item) => `
+                <div class="order-line">
+                  <img src="${item.photo_url || 'https://picsum.photos/seed/placeholder/200/200'}" alt="${escapeHtml(item.title_snapshot)}" />
+                  <span class="order-line-title">${escapeHtml(item.title_snapshot)} × ${item.quantity}</span>
+                  <span>${parseFloat(item.unit_price).toFixed(2)} PLN</span>
+                </div>
+              `
+            )
+            .join('');
+
+          const card = document.createElement('div');
+          card.className = 'order-card';
+          card.innerHTML = `
+            <div class="order-card-header">
+              <span>Sklep: ${escapeHtml(order.shop_name)}</span>
+              <span>Nr zamówienia: ${order.id.slice(0, 8)}</span>
+            </div>
+            ${linesHtml}
+            <div class="order-total">Razem: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}</div>
+          `;
+          container.appendChild(card);
+        } catch (err) {
+          // skip failed order fetch
+        }
+      }
+
+      if (!container.hasChildNodes()) {
+        container.innerHTML = '<p style="text-align:center;">Nie udało się załadować szczegółów zamówienia.</p>';
+      }
+    }
+
+    loadOrders();
+  </script>
+</body>
+</html>

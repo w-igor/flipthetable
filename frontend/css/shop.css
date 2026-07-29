@@ -257,6 +257,23 @@ body {
   margin-top: 4px;
 }
 
+.listing-card-add-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px;
+  background: var(--etsy-black);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.listing-card-add-btn:hover {
+  background: var(--etsy-orange);
+}
+
 .shop-empty-state {
   text-align: center;
   padding: 64px 16px;

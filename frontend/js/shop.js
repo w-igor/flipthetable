@@ -96,9 +96,25 @@ function renderListings(data) {
         <p class="listing-card-shop">${escapeHtml(item.shop_name)}</p>
         <p class="listing-card-title">${escapeHtml(item.title)}</p>
         <p class="listing-card-price">${formatPrice(item.price, item.currency)}</p>
-        ${outOfStock ? '<p class="listing-card-stock">Brak w magazynie</p>' : ''}
+        ${outOfStock
+          ? '<p class="listing-card-stock">Brak w magazynie</p>'
+          : `<button class="listing-card-add-btn" type="button">Dodaj do koszyka</button>`}
       </div>
     `;
+
+    if (!outOfStock) {
+      const addBtn = card.querySelector('.listing-card-add-btn');
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCart(item.id, 1);
+        addBtn.textContent = 'Dodano ✓';
+        setTimeout(() => {
+          addBtn.textContent = 'Dodaj do koszyka';
+        }, 1200);
+      });
+    }
+
     grid.appendChild(card);
   });
 
