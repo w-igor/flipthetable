@@ -1,0 +1,301 @@
+:root {
+  --etsy-orange: #f1641e;
+  --etsy-orange-dark: #d14c0a;
+  --etsy-black: #222222;
+  --etsy-gray: #6b6b6b;
+  --etsy-border: #d5d0c9;
+  --etsy-bg: #f6f4ef;
+  --etsy-card: #ffffff;
+  --radius: 8px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--etsy-bg);
+  color: var(--etsy-black);
+}
+
+.shop-header {
+  background: var(--etsy-card);
+  border-bottom: 1px solid var(--etsy-border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.shop-logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--etsy-black);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.shop-logo span {
+  color: var(--etsy-orange);
+}
+
+.shop-search {
+  flex: 1;
+  display: flex;
+  max-width: 640px;
+}
+
+.shop-search input {
+  flex: 1;
+  padding: 11px 16px;
+  border: 2px solid var(--etsy-black);
+  border-right: none;
+  border-radius: 24px 0 0 24px;
+  font-size: 14px;
+}
+
+.shop-search input:focus {
+  outline: none;
+}
+
+.shop-search button {
+  padding: 0 20px;
+  border: 2px solid var(--etsy-black);
+  background: var(--etsy-black);
+  color: #fff;
+  border-radius: 0 24px 24px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.shop-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.shop-header-actions a {
+  color: var(--etsy-black);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.shop-header-actions a:hover {
+  text-decoration: underline;
+}
+
+.shop-layout {
+  display: flex;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.shop-filters {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--etsy-card);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: sticky;
+  top: 88px;
+}
+
+.shop-filters h3 {
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
+.shop-filters h3:not(:first-child) {
+  margin-top: 24px;
+}
+
+.filter-category {
+  display: block;
+  padding: 6px 0;
+  color: var(--etsy-black);
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+}
+
+.filter-category.active {
+  font-weight: 700;
+  color: var(--etsy-orange);
+}
+
+.price-range-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.price-range-row input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--etsy-border);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.filter-apply-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 9px;
+  background: var(--etsy-black);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.filter-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.shop-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.shop-result-count {
+  font-size: 14px;
+  color: var(--etsy-gray);
+}
+
+.shop-sort select {
+  padding: 8px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.listing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.listing-card {
+  background: var(--etsy-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+  text-decoration: none;
+  color: var(--etsy-black);
+  display: block;
+}
+
+.listing-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.listing-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #eee;
+  display: block;
+}
+
+.listing-card-body {
+  padding: 12px 4px;
+}
+
+.listing-card-title {
+  font-size: 14px;
+  line-height: 1.3;
+  margin: 0 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.listing-card-shop {
+  font-size: 12px;
+  color: var(--etsy-gray);
+  margin: 0 0 6px;
+}
+
+.listing-card-price {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.listing-card-stock {
+  font-size: 11px;
+  color: #c0392b;
+  margin-top: 4px;
+}
+
+.shop-empty-state {
+  text-align: center;
+  padding: 64px 16px;
+  color: var(--etsy-gray);
+}
+
+.shop-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.shop-pagination button {
+  padding: 8px 14px;
+  border: 1px solid var(--etsy-border);
+  background: var(--etsy-card);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.shop-pagination button.active {
+  background: var(--etsy-black);
+  color: #fff;
+  border-color: var(--etsy-black);
+}
+
+.shop-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .shop-layout {
+    flex-direction: column;
+  }
+  .shop-filters {
+    width: 100%;
+    position: static;
+  }
+}

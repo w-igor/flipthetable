@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Katalog produktów — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body>
+  <header class="shop-header">
+    <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
+    <form class="shop-search" id="searchForm">
+      <input type="text" id="searchInput" placeholder="Szukaj produktów..." />
+      <button type="submit">Szukaj</button>
+    </form>
+    <div class="shop-header-actions" id="headerActions">
+      <a href="login.html">Zaloguj się</a>
+      <a href="register.html">Zarejestruj się</a>
+    </div>
+  </header>
+
+  <div class="shop-layout">
+    <aside class="shop-filters">
+      <h3>Kategorie</h3>
+      <div id="categoryList">
+        <button class="filter-category active" data-slug="">Wszystkie</button>
+      </div>
+
+      <h3>Cena</h3>
+      <div class="price-range-row">
+        <input type="number" id="minPrice" placeholder="Od" min="0" />
+        <input type="number" id="maxPrice" placeholder="Do" min="0" />
+      </div>
+      <label class="filter-checkbox-row">
+        <input type="checkbox" id="inStockOnly" />
+        Tylko dostępne
+      </label>
+      <button class="filter-apply-btn" id="applyFilters">Zastosuj</button>
+    </aside>
+
+    <main class="shop-main">
+      <div class="shop-toolbar">
+        <span class="shop-result-count" id="resultCount"></span>
+        <div class="shop-sort">
+          <select id="sortSelect">
+            <option value="newest">Najnowsze</option>
+            <option value="price_asc">Cena: rosnąco</option>
+            <option value="price_desc">Cena: malejąco</option>
+            <option value="popular">Popularne</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="listingGrid" class="listing-grid"></div>
+      <div id="emptyState" class="shop-empty-state" style="display:none;">
+        Nie znaleziono produktów spełniających kryteria.
+      </div>
+
+      <div id="pagination" class="shop-pagination"></div>
+    </main>
+  </div>
+
+  <script src="../js/shop.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produkt — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/shop.css" />
+  <style>
+    .listing-detail {
+      max-width: 1000px;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: flex;
+      gap: 40px;
+    }
+    .listing-detail img {
+      width: 420px;
+      height: 420px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .listing-detail-info h1 {
+      font-size: 24px;
+      margin: 0 0 8px;
+    }
+    .listing-detail-shop {
+      color: #6b6b6b;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .listing-detail-price {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .listing-detail-desc {
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .back-link {
+      display: inline-block;
+      margin: 16px 24px 0;
+      color: #222;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    @media (max-width: 720px) {
+      .listing-detail { flex-direction: column; }
+      .listing-detail img { width: 100%; height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shop-header">
+    <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
+  </header>
+
+  <a href="shop.html" class="back-link">‹ Wróć do katalogu</a>
+
+  <div id="listingContainer" class="listing-detail"></div>
+
+  <script>
+    const API_URL = 'http://localhost:8080';
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadListing() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const container = document.getElementById('listingContainer');
+
+      if (!id) {
+        container.innerHTML = '<p>Brak ID produktu.</p>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/listings/${id}`);
+        if (!res.ok) {
+          container.innerHTML = '<p>Produkt nie znaleziony.</p>';
+          return;
+        }
+        const item = await res.json();
+        const img = (item.photos && item.photos[0] && item.photos[0].url) || 'https://picsum.photos/seed/placeholder/600/600';
+
+        document.title = `${item.title} — FlipTheTable`;
+        container.innerHTML = `
+          <img src="${img}" alt="${escapeHtml(item.title)}" />
+          <div class="listing-detail-info">
+            <h1>${escapeHtml(item.title)}</h1>
+            <p class="listing-detail-shop">Sprzedawca: ${escapeHtml(item.shop_name)}</p>
+            <p class="listing-detail-price">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
+            <p class="listing-detail-desc">${escapeHtml(item.description || '')}</p>
+            <p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = '<p>Błąd ładowania produktu.</p>';
+      }
+    }
+
+    loadListing();
+  </script>
+</body>
+</html>
