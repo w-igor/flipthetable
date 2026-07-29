@@ -168,14 +168,28 @@ async function loadListings() {
   }
 }
 
+function logout() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('user');
+  window.location.reload();
+}
+
 function updateHeaderForAuth() {
   const user = localStorage.getItem('user') || sessionStorage.getItem('user');
-  if (!user) return;
+  const authActions = document.getElementById('authActions');
+  if (!user || !authActions) return;
 
   try {
     const parsed = JSON.parse(user);
-    const actions = document.getElementById('headerActions');
-    actions.innerHTML = `<span>Cześć, ${escapeHtml(parsed.username)}</span>`;
+    authActions.innerHTML = `<span>Cześć, ${escapeHtml(parsed.username)}</span> <a href="#" id="logoutLink">Wyloguj</a>`;
+    document.getElementById('logoutLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      logout();
+    });
   } catch (err) {
     // ignore malformed session data
   }

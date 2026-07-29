@@ -1,9 +1,3 @@
-const API_URL = window.API_URL || 'http://localhost:8080';
-
-function getAccessToken() {
-  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-}
-
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -114,12 +108,9 @@ function initCheckout() {
     submitBtn.textContent = 'Przetwarzanie...';
 
     try {
-      const res = await fetch(`${API_URL}/orders`, {
+      const res = await authFetch('/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items, shipping_addr, note }),
       });
       const data = await res.json();

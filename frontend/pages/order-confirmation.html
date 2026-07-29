@@ -90,13 +90,8 @@
     </div>
   </div>
 
+  <script src="../js/api.js"></script>
   <script>
-    const API_URL = 'http://localhost:8080';
-
-    function getAccessToken() {
-      return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    }
-
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
@@ -106,9 +101,8 @@
     async function loadOrders() {
       const container = document.getElementById('ordersContainer');
       const ids = new URLSearchParams(window.location.search).get('ids');
-      const token = getAccessToken();
 
-      if (!ids || !token) {
+      if (!ids) {
         container.innerHTML = '<p style="text-align:center;">Brak danych zamówienia.</p>';
         return;
       }
@@ -117,9 +111,7 @@
 
       for (const id of orderIds) {
         try {
-          const res = await fetch(`${API_URL}/orders/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await authFetch(`/orders/${id}`);
           if (!res.ok) continue;
           const order = await res.json();
 
