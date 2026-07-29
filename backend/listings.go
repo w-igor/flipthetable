@@ -34,6 +34,9 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	if categorySlug := strings.TrimSpace(q.Get("category")); categorySlug != "" {
 		conditions = append(conditions, "c.slug = "+nextArg(categorySlug))
 	}
+	if shopID := strings.TrimSpace(q.Get("shop_id")); shopID != "" {
+		conditions = append(conditions, "l.shop_id = "+nextArg(shopID))
+	}
 	if search := strings.TrimSpace(q.Get("q")); search != "" {
 		placeholder := nextArg("%" + search + "%")
 		conditions = append(conditions, "(l.title ILIKE "+placeholder+" OR l.description ILIKE "+placeholder+")")

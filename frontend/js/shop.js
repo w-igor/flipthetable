@@ -16,12 +16,6 @@ function formatPrice(price, currency) {
   return `${value} ${currency}`;
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
 async function loadCategories() {
   try {
     const res = await fetch(`${API_URL}/categories`);
@@ -165,33 +159,6 @@ async function loadListings() {
   } catch (err) {
     console.error('Nie udało się pobrać produktów', err);
     document.getElementById('resultCount').textContent = 'Błąd ładowania produktów. Sprawdź czy backend działa.';
-  }
-}
-
-function logout() {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user');
-  sessionStorage.removeItem('access_token');
-  sessionStorage.removeItem('refresh_token');
-  sessionStorage.removeItem('user');
-  window.location.reload();
-}
-
-function updateHeaderForAuth() {
-  const user = localStorage.getItem('user') || sessionStorage.getItem('user');
-  const authActions = document.getElementById('authActions');
-  if (!user || !authActions) return;
-
-  try {
-    const parsed = JSON.parse(user);
-    authActions.innerHTML = `<span>Cześć, ${escapeHtml(parsed.username)}</span> <a href="#" id="logoutLink">Wyloguj</a>`;
-    document.getElementById('logoutLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      logout();
-    });
-  } catch (err) {
-    // ignore malformed session data
   }
 }
 

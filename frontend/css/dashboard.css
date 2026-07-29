@@ -1,0 +1,251 @@
+.dashboard-layout {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.dashboard-title {
+  font-size: 26px;
+  margin: 0 0 20px;
+}
+
+.dashboard-banner {
+  display: none;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+.dashboard-banner.show {
+  display: block;
+}
+
+.dashboard-banner.error {
+  background: #fdecea;
+  color: #c0392b;
+  border: 1px solid #f5c6cb;
+}
+
+.dashboard-banner.success {
+  background: #eaf6ea;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.dashboard-card {
+  background: var(--etsy-card);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.dashboard-card h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.dashboard-hint {
+  color: var(--etsy-gray);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+
+.dashboard-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.dashboard-card-header h2 {
+  margin: 0;
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--etsy-border);
+}
+
+.dashboard-tab {
+  border: none;
+  background: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--etsy-gray);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.dashboard-tab.active {
+  color: var(--etsy-black);
+  border-bottom-color: var(--etsy-orange);
+}
+
+.dashboard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dashboard-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.dashboard-field label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.dashboard-field input,
+.dashboard-field textarea,
+.dashboard-field select {
+  padding: 10px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.dashboard-field-row {
+  display: flex;
+  gap: 14px;
+}
+
+.dashboard-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dashboard-submit-btn {
+  padding: 11px 20px;
+  background: var(--etsy-orange);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dashboard-submit-btn:hover {
+  background: var(--etsy-orange-dark);
+}
+
+.dashboard-btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.dashboard-cancel-btn {
+  padding: 11px 20px;
+  background: none;
+  border: 1px solid var(--etsy-border);
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dashboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.dashboard-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+}
+
+.dashboard-row img {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.dashboard-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-row-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dashboard-row-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--etsy-gray);
+}
+
+.dashboard-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-edit-btn,
+.dashboard-toggle-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--etsy-border);
+  background: var(--etsy-card);
+  border-radius: 18px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dashboard-order-status {
+  padding: 8px 10px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.dashboard-stat-tile {
+  background: var(--etsy-bg);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+
+.dashboard-stat-value {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.dashboard-stat-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--etsy-gray);
+}
+
+.dashboard-empty {
+  color: var(--etsy-gray);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 0;
+}

@@ -71,12 +71,80 @@
       .listing-detail { flex-direction: column; }
       .listing-detail img { width: 100%; height: auto; }
     }
+    .listing-reviews {
+      max-width: 1000px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .listing-reviews h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .review-form-wrap {
+      background: #fff;
+      border: 1px solid #d5d0c9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .review-form-wrap select,
+    .review-form-wrap textarea {
+      display: block;
+      width: 100%;
+      margin: 6px 0 14px;
+      padding: 10px;
+      border: 1px solid #d5d0c9;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+    .review-form-wrap button {
+      padding: 10px 20px;
+      background: #f1641e;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .review-form-error {
+      color: #c0392b;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .review-row {
+      border-bottom: 1px solid #eee6da;
+      padding: 14px 0;
+    }
+    .review-header {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+    .review-stars {
+      color: #f1641e;
+      margin-left: 6px;
+    }
+    .review-comment {
+      margin: 0 0 4px;
+      line-height: 1.5;
+    }
+    .review-date {
+      margin: 0;
+      font-size: 12px;
+      color: #6b6b6b;
+    }
+    .reviews-empty {
+      color: #6b6b6b;
+    }
   </style>
 </head>
 <body>
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <span id="authActions">
+        <a href="login.html">Zaloguj się</a>
+        <a href="register.html">Zarejestruj się</a>
+      </span>
       <button id="cartToggleBtn" class="cart-icon-btn">🛒<span id="cartCount" class="cart-count-badge">0</span></button>
     </div>
   </header>
@@ -101,16 +169,31 @@
 
   <div id="listingContainer" class="listing-detail"></div>
 
+  <div class="listing-reviews">
+    <h2>Opinie</h2>
+    <div id="reviewFormWrap" class="review-form-wrap" style="display:none;">
+      <form id="reviewForm">
+        <label for="reviewRating">Ocena</label>
+        <select id="reviewRating">
+          <option value="5">5 - świetnie</option>
+          <option value="4">4 - dobrze</option>
+          <option value="3">3 - średnio</option>
+          <option value="2">2 - słabo</option>
+          <option value="1">1 - źle</option>
+        </select>
+        <label for="reviewComment">Komentarz (opcjonalnie)</label>
+        <textarea id="reviewComment" rows="3"></textarea>
+        <button type="submit" id="reviewSubmitBtn">Dodaj opinię</button>
+        <p class="review-form-error" id="reviewFormError"></p>
+      </form>
+    </div>
+    <div id="reviewsList" class="reviews-list"></div>
+  </div>
+
+  <script src="../js/nav.js"></script>
+  <script src="../js/api.js"></script>
   <script src="../js/cart.js"></script>
   <script>
-    const API_URL = 'http://localhost:8080';
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
     async function loadListing() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -135,7 +218,7 @@
           <img src="${img}" alt="${escapeHtml(item.title)}" />
           <div class="listing-detail-info">
             <h1>${escapeHtml(item.title)}</h1>
-            <p class="listing-detail-shop">Sprzedawca: ${escapeHtml(item.shop_name)}</p>
+            <p class="listing-detail-shop">Sprzedawca: <a href="shop-profile.html?id=${item.shop_id}">${escapeHtml(item.shop_name)}</a></p>
             <p class="listing-detail-price">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
             <p class="listing-detail-desc">${escapeHtml(item.description || '')}</p>
             <p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>
@@ -157,11 +240,91 @@
             setTimeout(() => { addBtn.textContent = 'Dodaj do koszyka'; }, 1200);
           });
         }
+
+        loadReviews(item.id);
+        setupReviewForm(item.id);
       } catch (err) {
         container.innerHTML = '<p>Błąd ładowania produktu.</p>';
       }
     }
 
+    function renderReviews(reviews) {
+      const container = document.getElementById('reviewsList');
+      if (reviews.length === 0) {
+        container.innerHTML = '<p class="reviews-empty">Brak opinii. Bądź pierwszy!</p>';
+        return;
+      }
+      container.innerHTML = reviews.map((r) => `
+        <div class="review-row">
+          <p class="review-header"><strong>${escapeHtml(r.reviewer_username)}</strong><span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span></p>
+          ${r.comment ? `<p class="review-comment">${escapeHtml(r.comment)}</p>` : ''}
+          <p class="review-date">${new Date(r.created_at).toLocaleDateString('pl-PL')}</p>
+        </div>
+      `).join('');
+    }
+
+    async function loadReviews(listingId) {
+      try {
+        const res = await fetch(`${API_URL}/listings/${listingId}/reviews`);
+        const reviews = await res.json();
+        renderReviews(reviews);
+      } catch (err) {
+        console.error('Nie udało się pobrać opinii', err);
+      }
+    }
+
+    async function setupReviewForm(listingId) {
+      const user = getCurrentUser();
+      const formWrap = document.getElementById('reviewFormWrap');
+      if (!user) return;
+
+      const reviewableStatuses = ['paid', 'processing', 'shipped', 'delivered'];
+      let match = null;
+      try {
+        const ordersRes = await authFetch('/orders');
+        if (!ordersRes.ok) return;
+        const orders = await ordersRes.json();
+        for (const order of orders) {
+          if (!reviewableStatuses.includes(order.status)) continue;
+          const item = (order.items || []).find((i) => i.listing_id === listingId && !i.reviewed);
+          if (item) {
+            match = item;
+            break;
+          }
+        }
+      } catch (err) {
+        return;
+      }
+      if (!match) return;
+
+      formWrap.style.display = 'block';
+      document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        document.getElementById('reviewFormError').textContent = '';
+        const rating = parseInt(document.getElementById('reviewRating').value, 10);
+        const comment = document.getElementById('reviewComment').value.trim();
+        const submitBtn = document.getElementById('reviewSubmitBtn');
+        submitBtn.disabled = true;
+        try {
+          const res = await authFetch('/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_item_id: match.id, rating, comment }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            document.getElementById('reviewFormError').textContent = data.message || 'Nie udało się dodać opinii.';
+            return;
+          }
+          formWrap.style.display = 'none';
+          loadReviews(listingId);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    updateHeaderForAuth();
     loadListing();
   </script>
 </body>

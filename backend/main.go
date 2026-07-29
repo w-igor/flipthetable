@@ -32,6 +32,21 @@ func main() {
 	mux.HandleFunc("GET /categories", handleGetCategories)
 	mux.HandleFunc("GET /listings", handleGetListings)
 	mux.HandleFunc("GET /listings/{id}", handleGetListing)
+	mux.HandleFunc("POST /listings", requireAuth(handleCreateListing))
+	mux.HandleFunc("PUT /listings/{id}", requireAuth(handleUpdateListing))
+	mux.HandleFunc("DELETE /listings/{id}", requireAuth(handleDeleteListing))
+	mux.HandleFunc("GET /listings/{id}/reviews", handleGetListingReviews)
+	mux.HandleFunc("POST /reviews", requireAuth(handleCreateReview))
+
+	mux.HandleFunc("POST /shops", requireAuth(handleCreateShop))
+	mux.HandleFunc("GET /shops/me", requireAuth(handleGetMyShop))
+	mux.HandleFunc("PUT /shops/me", requireAuth(handleUpdateShop))
+	mux.HandleFunc("GET /shops/{id}", handleGetShopPublic)
+
+	mux.HandleFunc("GET /seller/listings", requireAuth(handleGetMyListings))
+	mux.HandleFunc("GET /seller/stats", requireAuth(handleGetSellerStats))
+	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
+	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
 
 	mux.HandleFunc("POST /orders", requireAuth(handleCreateOrder))
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))

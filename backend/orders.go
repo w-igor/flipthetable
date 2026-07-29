@@ -158,12 +158,12 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 
 		createdOrders = append(createdOrders, OrderView{
-			ID:          orderID,
-			ShopID:      shopID,
-			ShopName:    shopName,
-			Status:      "pending",
-			TotalAmount: formatPrice(total),
-			Currency:    "PLN",
+			ID:           orderID,
+			ShopID:       shopID,
+			ShopName:     shopName,
+			Status:       "pending",
+			TotalAmount:  formatPrice(total),
+			Currency:     "PLN",
 			ShippingAddr: req.ShippingAddr,
 			Note:         req.Note,
 			Items:        orderItems,
@@ -177,6 +177,28 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]interface{}{"orders": createdOrders})
+}
+
+func fetchOrderItems(ctx context.Context, orderID string) []OrderItemView {
+	items := []OrderItemView{}
+	itemRows, err := dbPool.Query(ctx, `
+		SELECT oi.id, oi.listing_id, oi.quantity, oi.unit_price, oi.title_snapshot,
+		       (SELECT url FROM listing_photos p WHERE p.listing_id = oi.listing_id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1),
+		       EXISTS(SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
+		FROM order_items oi
+		WHERE oi.order_id = $1
+	`, orderID)
+	if err != nil {
+		return items
+	}
+	defer itemRows.Close()
+	for itemRows.Next() {
+		var item OrderItemView
+		if itemRows.Scan(&item.ID, &item.ListingID, &item.Quantity, &item.UnitPrice, &item.TitleSnapshot, &item.PhotoURL, &item.Reviewed) == nil {
+			items = append(items, item)
+		}
+	}
+	return items
 }
 
 func handleListOrders(w http.ResponseWriter, r *http.Request) {
@@ -218,6 +240,11 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 		orders = append(orders, o)
 	}
+	rows.Close()
+
+	for i := range orders {
+		orders[i].Items = fetchOrderItems(ctx, orders[i].ID)
+	}
 
 	writeJSON(w, http.StatusOK, orders)
 }
@@ -257,21 +284,107 @@ func handleGetOrder(w http.ResponseWriter, r *http.Request) {
 		o.Note = *note
 	}
 
-	itemRows, err := dbPool.Query(ctx, `
-		SELECT oi.id, oi.listing_id, oi.quantity, oi.unit_price, oi.title_snapshot,
-		       (SELECT url FROM listing_photos p WHERE p.listing_id = oi.listing_id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1)
-		FROM order_items oi
-		WHERE oi.order_id = $1
-	`, id)
-	if err == nil {
-		defer itemRows.Close()
-		for itemRows.Next() {
-			var item OrderItemView
-			if itemRows.Scan(&item.ID, &item.ListingID, &item.Quantity, &item.UnitPrice, &item.TitleSnapshot, &item.PhotoURL) == nil {
-				o.Items = append(o.Items, item)
-			}
-		}
-	}
+	o.Items = fetchOrderItems(ctx, id)
 
 	writeJSON(w, http.StatusOK, o)
+}
+
+func handleListSellerOrders(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	shopID, err := getOwnShopID(ctx, userID)
+	if err == pgx.ErrNoRows {
+		writeError(w, http.StatusNotFound, "Nie masz jeszcze sklepu")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Błąd serwera")
+		return
+	}
+
+	rows, err := dbPool.Query(ctx, `
+		SELECT o.id, o.shop_id, s.name, u.username, o.status, o.total_amount, o.currency,
+		       o.shipping_addr, o.note, o.created_at
+		FROM orders o
+		JOIN shops s ON s.id = o.shop_id
+		JOIN users u ON u.id = o.buyer_id
+		WHERE o.shop_id = $1
+		ORDER BY o.created_at DESC
+	`, shopID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Nie udało się pobrać zamówień")
+		return
+	}
+	defer rows.Close()
+
+	orders := []OrderView{}
+	for rows.Next() {
+		var o OrderView
+		var shippingRaw []byte
+		var note *string
+		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.BuyerUsername, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt); err != nil {
+			writeError(w, http.StatusInternalServerError, "Błąd odczytu zamówień")
+			return
+		}
+		json.Unmarshal(shippingRaw, &o.ShippingAddr)
+		if note != nil {
+			o.Note = *note
+		}
+		orders = append(orders, o)
+	}
+
+	writeJSON(w, http.StatusOK, orders)
+}
+
+func handleUpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+		return
+	}
+	id := r.PathValue("id")
+
+	var req UpdateOrderStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "Nieprawidłowe dane wejściowe")
+		return
+	}
+	if !validOrderStatuses[req.Status] {
+		writeError(w, http.StatusBadRequest, "Nieprawidłowy status zamówienia")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	shopID, err := getOwnShopID(ctx, userID)
+	if err == pgx.ErrNoRows {
+		writeError(w, http.StatusNotFound, "Nie masz jeszcze sklepu")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Błąd serwera")
+		return
+	}
+
+	tag, err := dbPool.Exec(ctx, `
+		UPDATE orders SET status = $1 WHERE id = $2 AND shop_id = $3
+	`, req.Status, id, shopID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Nie udało się zaktualizować statusu")
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		writeError(w, http.StatusNotFound, "Zamówienie nie znalezione w Twoim sklepie")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Status zaktualizowany"})
 }

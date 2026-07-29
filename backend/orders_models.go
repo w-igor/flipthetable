@@ -18,8 +18,8 @@ type OrderItemRequest struct {
 
 type CreateOrderRequest struct {
 	Items        []OrderItemRequest `json:"items"`
-	ShippingAddr ShippingAddress     `json:"shipping_addr"`
-	Note         string              `json:"note"`
+	ShippingAddr ShippingAddress    `json:"shipping_addr"`
+	Note         string             `json:"note"`
 }
 
 type OrderItemView struct {
@@ -29,17 +29,33 @@ type OrderItemView struct {
 	UnitPrice     string  `json:"unit_price"`
 	TitleSnapshot string  `json:"title_snapshot"`
 	PhotoURL      *string `json:"photo_url,omitempty"`
+	Reviewed      bool    `json:"reviewed"`
 }
 
 type OrderView struct {
-	ID           string          `json:"id"`
-	ShopID       string          `json:"shop_id"`
-	ShopName     string          `json:"shop_name"`
-	Status       string          `json:"status"`
-	TotalAmount  string          `json:"total_amount"`
-	Currency     string          `json:"currency"`
-	ShippingAddr ShippingAddress `json:"shipping_addr"`
-	Note         string          `json:"note,omitempty"`
-	Items        []OrderItemView `json:"items,omitempty"`
-	CreatedAt    time.Time       `json:"created_at"`
+	ID            string          `json:"id"`
+	ShopID        string          `json:"shop_id"`
+	ShopName      string          `json:"shop_name"`
+	BuyerUsername string          `json:"buyer_username,omitempty"`
+	Status        string          `json:"status"`
+	TotalAmount   string          `json:"total_amount"`
+	Currency      string          `json:"currency"`
+	ShippingAddr  ShippingAddress `json:"shipping_addr"`
+	Note          string          `json:"note,omitempty"`
+	Items         []OrderItemView `json:"items,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
+}
+
+type UpdateOrderStatusRequest struct {
+	Status string `json:"status"`
+}
+
+var validOrderStatuses = map[string]bool{
+	"pending":    true,
+	"paid":       true,
+	"processing": true,
+	"shipped":    true,
+	"delivered":  true,
+	"cancelled":  true,
+	"refunded":   true,
 }

@@ -1,0 +1,188 @@
+.orders-layout {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.orders-title {
+  font-size: 26px;
+  margin: 0 0 20px;
+}
+
+.orders-banner {
+  display: none;
+}
+
+.orders-banner.show {
+  display: block;
+}
+
+.orders-empty {
+  color: var(--etsy-gray);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.order-card {
+  background: var(--etsy-card);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--etsy-border);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.order-card-shop {
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.order-card-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--etsy-gray);
+}
+
+.order-card-status {
+  text-align: right;
+}
+
+.order-card-total {
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.order-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #eee;
+  color: #555;
+}
+
+.order-status-badge.order-status-paid,
+.order-status-badge.order-status-delivered {
+  background: #eaf6ea;
+  color: #2e7d32;
+}
+
+.order-status-badge.order-status-processing,
+.order-status-badge.order-status-shipped {
+  background: #fff4e5;
+  color: #b26a00;
+}
+
+.order-status-badge.order-status-cancelled,
+.order-status-badge.order-status-refunded {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.order-card-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-item-row {
+  display: flex;
+  gap: 14px;
+}
+
+.order-item-row img {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.order-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-item-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--etsy-black);
+  text-decoration: none;
+}
+
+.order-item-title:hover {
+  text-decoration: underline;
+}
+
+.order-item-meta {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  color: var(--etsy-gray);
+}
+
+.order-item-reviewed {
+  margin: 0;
+  font-size: 13px;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.order-item-wait {
+  margin: 0;
+  font-size: 12px;
+  color: var(--etsy-gray);
+}
+
+.order-review-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  max-width: 480px;
+}
+
+.order-review-form select {
+  padding: 8px;
+  border: 1px solid var(--etsy-border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.order-review-form textarea {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid var(--etsy-border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.order-review-form button {
+  padding: 8px 16px;
+  background: var(--etsy-orange);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.order-review-error {
+  width: 100%;
+  margin: 0;
+  font-size: 12px;
+  color: #c0392b;
+}
