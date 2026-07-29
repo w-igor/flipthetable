@@ -6,230 +6,117 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ```
 .
-├── backend/          # Go server (REST API, auth)
+├── backend/          # Go server (REST API, auth, katalog, zamówienia)
+│   └── seed/         # Jednorazowy seeder danych demo (kategorie, sklep, produkty)
 ├── frontend/         # Vanilla JS client
-├── shared/           # Shared types/constants
-├── docker-compose.yml
-├── init.sql          # Database schema
+├── init.sql          # Database schema (UUID, Neon)
 └── README.md
 ```
 
-## Stage 1: Auth & Login ✅
+## Zrobione ✅
 
-- ✅ User registration
-- ✅ User login
-- ✅ Refresh tokens
-- ✅ "Remember me" (30-day sessions)
-- ✅ JWT authentication
-- ✅ Password hashing (bcrypt)
+### Auth
+- ✅ Rejestracja i logowanie (bcrypt + JWT)
+- ✅ Access token (15 min) + refresh token (24h / 30 dni z "remember me")
+- ✅ Auto-refresh tokenu w froncie przy 401 (`frontend/js/api.js`)
+- ✅ `GET /auth/me`
 
-## Stage 2: Shop & Catalog ✅
+### Katalog produktów
+- ✅ Przeglądanie produktów z paginacją
+- ✅ Filtrowanie po kategorii, cenie, dostępności
+- ✅ Wyszukiwarka (tytuł/opis)
+- ✅ Sortowanie (najnowsze, cena, popularność)
+- ✅ Strona szczegółów produktu
 
-- ✅ Product listing with filters
-- ✅ Category filtering
-- ✅ Search functionality
-- ✅ Product details modal
-- ✅ Shopping cart (add/remove/update)
-- ✅ Price filtering
-- ✅ Stock status display
+### Koszyk i checkout
+- ✅ Koszyk w localStorage (dodaj/usuń/zmień ilość), szuflada w headerze
+- ✅ Checkout z formularzem wysyłki
+- ✅ Tworzenie zamówień w transakcji (grupowanie per sklep, blokada stanu magazynowego, walidacja ilości)
+- ✅ Strona potwierdzenia zamówienia
+- ✅ `GET /orders`, `GET /orders/:id` (backend gotowy, brak jeszcze frontendowej historii zamówień)
 
-## Stage 3: Orders & Checkout ✅
+## Niezrobione jeszcze ❌
 
-- ✅ Checkout page with shipping options
-- ✅ Order creation with cart validation
-- ✅ Stock management (automatic reduction)
-- ✅ Order confirmation page
-- ✅ Order history with filtering
-- ✅ Order statistics (total spent, pending orders)
-- ✅ Order detail modal
-- ✅ Order status tracking
-- ✅ Transaction handling (cart clear on success)
-
-## Stage 4: WebSockets & Real-time ✅
-
-- ✅ WebSocket server (gorilla/websocket)
-- ✅ Real-time notification system
-- ✅ Order creation notifications
-- ✅ Order status update notifications
-- ✅ Notification center UI
-- ✅ Toast notifications
-- ✅ Connection status indicator
-- ✅ Auto-reconnect with exponential backoff
-- ✅ Unread notification badge
-
-## Stage 5: Seller Dashboard ✅
-
-- ✅ Seller registration & profile
-- ✅ Product management (CRUD)
-- ✅ Product listing with edit/delete
-- ✅ Inventory management
-- ✅ Order management view
-- ✅ Sales analytics dashboard
-- ✅ Performance stats (total sales, avg rating)
-- ✅ Monthly sales tracking
-- ✅ Seller verification status
-- ✅ Multi-tab dashboard UI
+- ❌ Strona/historia zamówień użytkownika (endpoints są, brak UI)
+- ❌ Statystyki zamówień (suma wydatków, liczba oczekujących)
+- ❌ Dashboard sprzedawcy (CRUD produktów, zarządzanie zamówieniami, statystyki sprzedaży)
+- ❌ WebSockety / powiadomienia w czasie rzeczywistym
+- ❌ Recenzje produktów, ulubione (`favorites`), wiadomości (`messages`) — tabele istnieją w `init.sql`, brak API i UI
+- ❌ Integracja płatności (tabela `payments` istnieje, brak logiki)
+- ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
 
 ## Wymagania
 
-- Docker & Docker Compose
-- Go 1.21+
-- Node.js (opcjonalnie, dla toolów)
+- Go 1.23+
+- Python 3 (do serwowania frontendu lokalnie) lub dowolny inny static file server
+- Konto Neon.tech (baza już skonfigurowana w `.env`)
 
-## Setup z Neon.tech (Production Database)
+## Uruchomienie lokalne
 
-### 1. Clone i setup
-```bash
-cd flipthetable
-cp .env.example .env
-```
-
-### 2. Skonfiguruj .env dla Neon
-Edytuj `.env` i dodaj dane z Neon:
-```bash
-PGUSER=admin
-PGPASSWORD=npg_TokODPY2bS4f
-PGHOST=ep-still-band-aiqm10i0-pooler.c-4.us-east-1.aws.neon.tech
-PGPORT=5432
-PGDATABASE=flipthetable
-```
-
-### 3. Inicjalizuj bazę danych (Neon)
-1. Przejdź do [Neon Console](https://console.neon.tech)
-2. Otwórz projekt → SQL Editor
-3. Skopiuj zawartość `init.sql` i wykonaj zapytania
-4. Czekaj na "Queries executed successfully"
-
-### 4. Backend
+### 1. Backend
 ```bash
 cd backend
-go mod download
-go run main.go
-# Server: http://localhost:8080 ✓
+go run .
+# Server: http://localhost:8080
 ```
+Backend czyta `.env` z katalogu głównego repo i łączy się bezpośrednio z Neon — nie potrzeba Dockera ani lokalnego Postgresa.
 
-### 5. Frontend
+### 2. (Opcjonalnie) Seed danych demo
+Jeśli baza jest pusta (brak kategorii/sklepów/produktów):
 ```bash
-# Otwórz frontend/index.html w przeglądarce
-# Lub uruchom:
+cd backend/seed
+go run main.go
+```
+Tworzy demo sklep, 5 kategorii i 10 przykładowych produktów. Bezpieczne do wielokrotnego uruchamiania (nie duplikuje istniejących danych).
+
+### 3. Frontend
+```bash
 cd frontend
 python -m http.server 3000
-# Otwórz: http://localhost:3000 ✓
 ```
-
-## Setup Lokalny (z Docker - opcjonalnie)
-```bash
-docker-compose up -d
-# Uruchamia lokalny PostgreSQL zamiast Neon
-```
+Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produktów (`pages/shop.html`).
 
 ## API Endpoints
 
 ### Auth
-- `POST /auth/register` - Rejestracja
-- `POST /auth/login` - Logowanie
-- `POST /auth/refresh` - Odświeżenie access tokena
-- `GET /auth/me` - Dane użytkownika (wymaga auth)
+- `POST /auth/register` — rejestracja `{username, email, password, is_seller}`
+- `POST /auth/login` — logowanie `{email, password, remember}`
+- `POST /auth/refresh` — odświeżenie access tokena `{refresh_token}`
+- `GET /auth/me` — dane zalogowanego użytkownika (wymaga `Authorization: Bearer`)
 
-### Request Body (register/login)
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "remember": true
-}
-```
+### Katalog
+- `GET /categories` — lista kategorii
+- `GET /listings` — lista produktów; query params: `category`, `q`, `min_price`, `max_price`, `in_stock`, `sort`, `page`, `page_size`
+- `GET /listings/:id` — szczegóły produktu (zwiększa `views_count`)
 
-### Response (login/register)
-```json
-{
-  "access_token": "eyJhbG...",
-  "refresh_token": "eyJhbG...",
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "created_at": "2026-07-29T10:00:00Z"
-  }
-}
-```
-
-## Frontend Features
-
-- Login/Signup UI
-- Token storage (localStorage)
-- Auto-refresh na token expiry
-- "Remember me" (30 dni)
-- Dashboard po zalogowaniu
-
-## Następne Etapy
-
-- [ ] Stage 2: Shop/Catalog (REST API)
-- [ ] Stage 3: WebSockets (Live chat, notifications)
-- [ ] Stage 4: Dashboard (Stats, history)
-- [ ] Stage 5: Payment integration
+### Zamówienia (wymagają auth)
+- `POST /orders` — `{items: [{listing_id, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep
+- `GET /orders` — historia zamówień kupującego
+- `GET /orders/:id` — szczegóły zamówienia
 
 ## Environment Variables
 
 ```
-PGUSER=admin              # DB user
-PGPASSWORD=***           # DB password
-PGHOST=localhost         # DB host
-PGPORT=5432              # DB port
-PGDATABASE=flipthetable  # DB name
-JWT_SECRET=***           # JWT secret (zmienić na prod!)
-PORT=8080                # Server port
+PGUSER=admin
+PGPASSWORD=***
+PGHOST=...neon.tech
+PGPORT=5432
+PGDATABASE=flipthetable
+JWT_SECRET=***           # zmienić na prod!
+PORT=8080
 ```
-
-## Production Deployment
-
-### Verify Neon Connection
-```bash
-# Test connection (install psql first):
-psql "postgresql://admin:npg_TokODPY2bS4f@ep-still-band-aiqm10i0-pooler.c-4.us-east-1.aws.neon.tech/flipthetable?sslmode=require"
-```
-
-### Environment Variables (production)
-Upewnij się że masz w `.env`:
-```
-JWT_SECRET=change-this-strong-random-key
-PGPASSWORD=npg_TokODPY2bS4f
-```
-
-### Deploy Backend (Render/Railway/Heroku)
-1. Push to GitHub
-2. Connect repository w platform'ie
-3. Set env variables
-4. Deploy
-
-### Deploy Frontend (Vercel/Netlify)
-1. Zmień `API_URL` na production backend
-2. Deploy `frontend/` folder
 
 ## Troubleshooting
 
 ### CORS błędy w frontend
-- Backend musi mieć CORS headers (już configured)
-- Frontend robiący fetch powinien mieć `http://localhost:8080` (dev) lub production URL
+Backend ma `Access-Control-Allow-Origin: *` skonfigurowane globalnie (`backend/middleware.go`).
 
-### Token expired
-- Frontend automatycznie refreshuje token
-- Jeśli refresh token wygasł, user musi się zalogować ponownie
+### Token expired / 401 na chronionych endpointach
+Frontend automatycznie próbuje odświeżyć token przez `/auth/refresh` (`frontend/js/api.js`, `authFetch`). Jeśli refresh token też wygasł, użytkownik jest przekierowywany do loginu.
 
 ### Database connection refused (Neon)
-- Sprawdź czy connection string jest poprawny
-- Czekaj ~30s na cold start (Neon może być w sleep mode)
-- Verify IP whitelisting w Neon settings
-
-## Development
-
-```bash
-# Watch mode (nie wbudowany, ale możesz użyć air w Go)
-# Dla frontend: live-server frontend/
-
-# Testing
-cd backend
-go test ./...
-```
+- Sprawdź `.env` (`PGHOST`, `PGPASSWORD` itd.)
+- Neon może potrzebować chwili na "obudzenie się" po uśpieniu (cold start)
 
 ---
 
