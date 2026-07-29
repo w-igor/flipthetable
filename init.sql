@@ -67,6 +67,18 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 -- Indexes
+-- Stage 4: WebSockets & Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_email VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    order_id INTEGER,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX idx_products_category_id ON products(category_id);
@@ -74,6 +86,8 @@ CREATE INDEX idx_products_seller_id ON products(seller_id);
 CREATE INDEX idx_cart_items_user_id ON cart_items(user_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_notifications_user_email ON notifications(user_email);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at);
 
 -- Sample admin user (password: admin123)
 INSERT INTO users (email, password) VALUES

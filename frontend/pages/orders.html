@@ -6,6 +6,7 @@
     <title>Moje zamówienia - FlipTheTable</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/orders.css">
+    <link rel="stylesheet" href="../css/notifications.css">
 </head>
 <body>
     <header class="navbar">
@@ -13,6 +14,7 @@
             <h1 class="logo">FlipTheTable</h1>
             <nav class="nav-links">
                 <a href="shop.html">← Wróć do sklepu</a>
+                <a href="#" class="notification-icon" onclick="notificationManager.togglePanel(); return false;">🔔</a>
             </nav>
         </div>
     </header>
@@ -63,6 +65,22 @@
         </div>
     </div>
 
+    <script src="../js/websocket.js"></script>
+    <script src="../js/notifications-ui.js"></script>
     <script src="../js/orders.js"></script>
+    <script>
+        // Initialize WebSocket connection when page loads
+        window.addEventListener('load', async () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    notificationManager.init();
+                    await wsClient.connect(token);
+                } catch (error) {
+                    console.error('Failed to connect WebSocket:', error);
+                }
+            }
+        });
+    </script>
 </body>
 </html>

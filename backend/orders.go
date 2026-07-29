@@ -141,6 +141,9 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send real-time notification
+	notifyOrderCreated(email, orderID, totalPrice)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":           orderID,
@@ -275,7 +278,19 @@ func handleUpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.Exec(
+	// Get user email from order
+	var userEmail string
+	err := db.QueryRow(
+		"SELECT u.email FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1",
+		orderID,
+	).Scan(&userEmail)
+
+	if err != nil {
+		http.Error(w, "Order not found", http.StatusNotFound)
+		return
+	}
+
+	_, err = db.Exec(
 		"UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2",
 		req.Status, orderID,
 	)
@@ -284,6 +299,10 @@ func handleUpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to update order", http.StatusInternalServerError)
 		return
 	}
+
+	// Send real-time notification
+	orderIDInt, _ := strconv.Atoi(orderID)
+	notifyOrderStatusChange(userEmail, orderIDInt, req.Status)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Order updated", "status": req.Status})

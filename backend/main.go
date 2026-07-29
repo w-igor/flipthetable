@@ -60,6 +60,10 @@ func init() {
 	}
 
 	log.Println("✓ Connected to database")
+
+	// Initialize WebSocket hub
+	initWebSocketHub()
+	log.Println("✓ WebSocket hub initialized")
 }
 
 func main() {
@@ -90,6 +94,9 @@ func main() {
 	mux.HandleFunc("GET /api/orders/{id}", corsMiddleware(authMiddleware(handleGetOrder)))
 	mux.HandleFunc("PUT /api/orders/{id}", corsMiddleware(authMiddleware(handleUpdateOrderStatus)))
 	mux.HandleFunc("GET /api/orders/stats/summary", corsMiddleware(authMiddleware(handleGetOrderStats)))
+
+	// WebSocket - Protected
+	mux.HandleFunc("GET /ws", authMiddlewareWS(handleWebSocket))
 
 	log.Println("🚀 Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
@@ -273,5 +280,41 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), "email", claims.Email)
 		r.Header.Set("X-Email", claims.Email)
 		next(w, r.WithContext(ctx))
+	}
+}
+
+func authMiddlewareWS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Try to get token from Authorization header
+		auth := r.Header.Get("Authorization")
+		token := ""
+
+		if auth != "" {
+			parts := strings.Split(auth, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token = parts[1]
+			}
+		} else {
+			// Try to get from query parameter
+			token = r.URL.Query().Get("token")
+		}
+
+		if token == "" {
+			http.Error(w, "Missing token", http.StatusUnauthorized)
+			return
+		}
+
+		claims := &Claims{}
+		_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+			return jwtSecret, nil
+		})
+
+		if err != nil {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		r.Header.Set("X-Email", claims.Email)
+		next(w, r)
 	}
 }

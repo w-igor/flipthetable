@@ -45,6 +45,18 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Order status tracking
 - ✅ Transaction handling (cart clear on success)
 
+## Stage 4: WebSockets & Real-time ✅
+
+- ✅ WebSocket server (gorilla/websocket)
+- ✅ Real-time notification system
+- ✅ Order creation notifications
+- ✅ Order status update notifications
+- ✅ Notification center UI
+- ✅ Toast notifications
+- ✅ Connection status indicator
+- ✅ Auto-reconnect with exponential backoff
+- ✅ Unread notification badge
+
 ## Wymagania
 
 - Docker & Docker Compose
