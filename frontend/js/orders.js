@@ -118,6 +118,34 @@ function renderOrders(orders) {
   });
 }
 
+function renderStats(stats) {
+  const container = document.getElementById('ordersStats');
+  container.innerHTML = `
+    <div class="orders-stat-tile">
+      <p class="orders-stat-value">${stats.total_orders}</p>
+      <p class="orders-stat-label">Zamówień</p>
+    </div>
+    <div class="orders-stat-tile">
+      <p class="orders-stat-value">${parseFloat(stats.total_spent).toFixed(2)} PLN</p>
+      <p class="orders-stat-label">Wydano łącznie</p>
+    </div>
+    <div class="orders-stat-tile">
+      <p class="orders-stat-value">${stats.pending_count}</p>
+      <p class="orders-stat-label">Oczekujące</p>
+    </div>
+  `;
+}
+
+async function loadStats() {
+  try {
+    const res = await authFetch('/orders/stats');
+    if (!res.ok) return;
+    renderStats(await res.json());
+  } catch (err) {
+    // statystyki są dodatkiem, brak ich nie blokuje reszty strony
+  }
+}
+
 async function loadOrders() {
   const container = document.getElementById('ordersList');
   container.innerHTML = '<p class="orders-empty">Ładowanie...</p>';
@@ -137,6 +165,7 @@ async function loadOrders() {
 function init() {
   if (!requireLogin()) return;
   updateHeaderForAuth();
+  loadStats();
   loadOrders();
 }
 

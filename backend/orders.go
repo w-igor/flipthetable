@@ -255,6 +255,34 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, orders)
 }
 
+func handleGetBuyerStats(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var stats BuyerStats
+	var totalSpent float64
+	err := dbPool.QueryRow(ctx, `
+		SELECT
+			COUNT(*),
+			COALESCE(SUM(total_amount) FILTER (WHERE status NOT IN ('cancelled', 'refunded')), 0),
+			COUNT(*) FILTER (WHERE status IN ('pending', 'paid', 'processing', 'shipped'))
+		FROM orders WHERE buyer_id = $1
+	`, userID).Scan(&stats.TotalOrders, &totalSpent, &stats.PendingCount)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Nie udało się pobrać statystyk")
+		return
+	}
+	stats.TotalSpent = formatPrice(totalSpent)
+
+	writeJSON(w, http.StatusOK, stats)
+}
+
 func handleGetOrder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {

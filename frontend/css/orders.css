@@ -23,6 +23,33 @@
   padding: 40px 0;
 }
 
+.orders-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.orders-stat-tile {
+  background: var(--etsy-card);
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+
+.orders-stat-value {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.orders-stat-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--etsy-gray);
+}
+
 .order-card {
   background: var(--etsy-card);
   border: 1px solid var(--etsy-border);

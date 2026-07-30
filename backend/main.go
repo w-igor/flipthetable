@@ -50,6 +50,7 @@ func main() {
 
 	mux.HandleFunc("POST /orders", requireAuth(handleCreateOrder))
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))
+	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
 	mux.HandleFunc("GET /orders/{id}", requireAuth(handleGetOrder))
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {

@@ -50,6 +50,12 @@ type UpdateOrderStatusRequest struct {
 	Status string `json:"status"`
 }
 
+type BuyerStats struct {
+	TotalOrders  int    `json:"total_orders"`
+	TotalSpent   string `json:"total_spent"`
+	PendingCount int    `json:"pending_count"`
+}
+
 var validOrderStatuses = map[string]bool{
 	"pending":    true,
 	"paid":       true,
