@@ -116,6 +116,53 @@
   color: #c0392b;
 }
 
+.order-status-badge.order-payment-failed,
+.order-status-badge.order-payment-pending {
+  background: #fdecea;
+  color: #c0392b;
+  margin-left: 6px;
+}
+
+.order-pay-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 12px;
+}
+
+.order-pay-form input {
+  padding: 6px 8px;
+  border: 1px solid #d5d0c9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.order-pay-form .order-pay-number {
+  flex: 1;
+  min-width: 140px;
+}
+
+.order-pay-form button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  background: var(--etsy-black, #222);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.order-pay-form .order-pay-error {
+  width: 100%;
+  color: #c0392b;
+  font-size: 12px;
+  margin: 0;
+}
+
 .order-card-items {
   display: flex;
   flex-direction: column;

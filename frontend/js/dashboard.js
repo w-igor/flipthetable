@@ -269,7 +269,7 @@ async function loadOrders() {
       <div class="dashboard-row" data-id="${o.id}">
         <div class="dashboard-row-info">
           <p class="dashboard-row-title">Zamówienie #${o.id.slice(0, 8)}</p>
-          <p class="dashboard-row-meta">Kupujący: ${escapeHtml(o.buyer_username || '—')} · ${parseFloat(o.total_amount).toFixed(2)} ${o.currency} · ${new Date(o.created_at).toLocaleDateString('pl-PL')}</p>
+          <p class="dashboard-row-meta">Kupujący: ${escapeHtml(o.buyer_username || '—')} · ${parseFloat(o.total_amount).toFixed(2)} ${o.currency} · ${new Date(o.created_at).toLocaleDateString('pl-PL')} · Płatność: ${o.payment_status === 'completed' ? 'opłacone' : o.payment_status === 'failed' ? 'odrzucona' : 'oczekuje'}</p>
         </div>
         <select class="dashboard-order-status" data-id="${o.id}">
           ${Object.entries(orderStatusLabels)

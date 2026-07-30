@@ -44,15 +44,24 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Kupujący może ocenić zakupioną pozycję (gwiazdki 1-5 + komentarz) ze strony „Moje zamówienia" lub ze strony produktu, gdy zamówienie jest opłacone/w realizacji/wysłane/dostarczone
 - ✅ `avg_rating` produktu przeliczane automatycznie po dodaniu opinii
 
+### Płatności
+- ✅ Symulowana bramka płatnicza — przy checkoucie tworzone jest zamówienie (`status = pending`) razem z rekordem w `payments` (`status = pending`)
+- ✅ `POST /orders/:id/pay` — waliduje dane karty (Luhn, CVC, data ważności), symuluje autoryzację i ustawia `payments.status` (`completed`/`failed`) oraz `orders.status = paid` po sukcesie
+- ✅ Karta testowa `4000000000000002` zawsze kończy się odrzuceniem (jak testowe karty Stripe) — reszta prawidłowych numerów (Luhn) jest akceptowana
+- ✅ Możliwość ponowienia płatności ze strony „Moje zamówienia", jeśli pierwsza próba się nie powiedzie
+
+### Ulubione i wiadomości
+- ✅ Ulubione produkty (serduszko w katalogu, strona `pages/favorites.html`)
+- ✅ Wiadomości kupujący–sprzedawca, licznik nieprzeczytanych w headerze (polling)
+
+### Zdjęcia
+- ✅ Lokalny upload zdjęć ofert i logo/baneru sklepu (`POST /uploads`)
+
 ## Niezrobione jeszcze ❌
 
-- ❌ Własne zdjęcia (upload) — obecnie zdjęcia produktów/sklepu to linki URL
-- ❌ Statystyki zamówień po stronie kupującego (suma wydatków, liczba oczekujących)
-- ❌ WebSockety / powiadomienia w czasie rzeczywistym
-- ❌ Ulubione (`favorites`), wiadomości (`messages`) — tabele istnieją w `init.sql`, brak API i UI
-- ❌ Integracja płatności (tabela `payments` istnieje, brak logiki)
+- ❌ WebSockety / prawdziwe powiadomienia push (obecnie tylko polling dla licznika nieprzeczytanych wiadomości)
+- ❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
 - ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
-- ❌ Blokada kupowania własnych ofert (to samo konto może być kupującym i sprzedawcą jednocześnie)
 
 ## Wymagania
 
@@ -102,6 +111,7 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 - `POST /orders` — `{items: [{listing_id, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep
 - `GET /orders` — historia zamówień kupującego (z pozycjami i flagą `reviewed` per pozycja)
 - `GET /orders/:id` — szczegóły zamówienia
+- `POST /orders/:id/pay` — `{cardholder_name, card_number, exp_month, exp_year, cvc}` — symulowana płatność za zamówienie (kupujący, zamówienie musi być `pending`)
 
 ### Sklepy
 - `POST /shops` — zakłada sklep dla zalogowanego użytkownika (ustawia `is_seller = true`), wymaga auth

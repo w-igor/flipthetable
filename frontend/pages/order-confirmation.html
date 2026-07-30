@@ -69,6 +69,27 @@
       font-weight: 700;
       text-decoration: underline;
     }
+    .payment-banner {
+      max-width: 720px;
+      margin: 0 auto 20px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .payment-banner.warning {
+      background: #fff3cd;
+      color: #7a5b00;
+      border: 1px solid #ffe08a;
+    }
+    .payment-status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .payment-status-completed { background: #dff5e1; color: #1a7d33; }
+    .payment-status-pending, .payment-status-failed { background: #fde2e2; color: #a11d1d; }
   </style>
 </head>
 <body>
@@ -83,6 +104,7 @@
       <p>Poniżej znajdziesz podsumowanie.</p>
     </div>
 
+    <div id="paymentBanner"></div>
     <div id="ordersContainer"></div>
 
     <div class="confirmation-actions">
@@ -98,9 +120,21 @@
       return div.innerHTML;
     }
 
+    const paymentStatusLabels = {
+      completed: 'Opłacone',
+      pending: 'Oczekuje na płatność',
+      failed: 'Płatność odrzucona',
+    };
+
     async function loadOrders() {
       const container = document.getElementById('ordersContainer');
-      const ids = new URLSearchParams(window.location.search).get('ids');
+      const params = new URLSearchParams(window.location.search);
+      const ids = params.get('ids');
+
+      if (params.get('paymentIssue') === '1') {
+        document.getElementById('paymentBanner').innerHTML =
+          '<div class="payment-banner warning">Płatność nie powiodła się dla części zamówień. Sprawdź status poniżej i spróbuj ponownie w „Moich zamówieniach".</div>';
+      }
 
       if (!ids) {
         container.innerHTML = '<p style="text-align:center;">Brak danych zamówienia.</p>';
@@ -127,6 +161,7 @@
             )
             .join('');
 
+          const paymentStatus = order.payment_status || 'pending';
           const card = document.createElement('div');
           card.className = 'order-card';
           card.innerHTML = `
@@ -135,7 +170,10 @@
               <span>Nr zamówienia: ${order.id.slice(0, 8)}</span>
             </div>
             ${linesHtml}
-            <div class="order-total">Razem: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}</div>
+            <div class="order-total">
+              <span class="payment-status-badge payment-status-${paymentStatus}">${paymentStatusLabels[paymentStatus] || paymentStatus}</span>
+              Razem: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}
+            </div>
           `;
           container.appendChild(card);
         } catch (err) {

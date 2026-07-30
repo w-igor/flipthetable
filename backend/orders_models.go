@@ -38,6 +38,7 @@ type OrderView struct {
 	ShopName      string          `json:"shop_name"`
 	BuyerUsername string          `json:"buyer_username,omitempty"`
 	Status        string          `json:"status"`
+	PaymentStatus string          `json:"payment_status,omitempty"`
 	TotalAmount   string          `json:"total_amount"`
 	Currency      string          `json:"currency"`
 	ShippingAddr  ShippingAddress `json:"shipping_addr"`

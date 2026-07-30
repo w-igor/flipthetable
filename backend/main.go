@@ -65,6 +65,7 @@ func main() {
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))
 	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
 	mux.HandleFunc("GET /orders/{id}", requireAuth(handleGetOrder))
+	mux.HandleFunc("POST /orders/{id}/pay", requireAuth(handlePayOrder))
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})

@@ -131,6 +131,11 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err := insertPendingPayment(ctx, tx, orderID, total, "PLN"); err != nil {
+			writeError(w, http.StatusInternalServerError, "Nie udało się zainicjować płatności")
+			return
+		}
+
 		if err := tx.QueryRow(ctx, `SELECT name FROM shops WHERE id = $1`, shopID).Scan(&shopName); err != nil {
 			shopName = ""
 		}
@@ -164,16 +169,17 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 
 		createdOrders = append(createdOrders, OrderView{
-			ID:           orderID,
-			ShopID:       shopID,
-			ShopName:     shopName,
-			Status:       "pending",
-			TotalAmount:  formatPrice(total),
-			Currency:     "PLN",
-			ShippingAddr: req.ShippingAddr,
-			Note:         req.Note,
-			Items:        orderItems,
-			CreatedAt:    createdAt,
+			ID:            orderID,
+			ShopID:        shopID,
+			ShopName:      shopName,
+			Status:        "pending",
+			PaymentStatus: "pending",
+			TotalAmount:   formatPrice(total),
+			Currency:      "PLN",
+			ShippingAddr:  req.ShippingAddr,
+			Note:          req.Note,
+			Items:         orderItems,
+			CreatedAt:     createdAt,
 		})
 	}
 
@@ -219,9 +225,10 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := dbPool.Query(ctx, `
 		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.currency,
-		       o.shipping_addr, o.note, o.created_at
+		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
+		LEFT JOIN payments p ON p.order_id = o.id
 		WHERE o.buyer_id = $1
 		ORDER BY o.created_at DESC
 	`, userID)
@@ -236,9 +243,13 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 		var o OrderView
 		var shippingRaw []byte
 		var note *string
-		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt); err != nil {
+		var paymentStatus *string
+		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu zamówień")
 			return
+		}
+		if paymentStatus != nil {
+			o.PaymentStatus = *paymentStatus
 		}
 		json.Unmarshal(shippingRaw, &o.ShippingAddr)
 		if note != nil {
@@ -297,13 +308,15 @@ func handleGetOrder(w http.ResponseWriter, r *http.Request) {
 	var o OrderView
 	var shippingRaw []byte
 	var note *string
+	var paymentStatus *string
 	err := dbPool.QueryRow(ctx, `
 		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.currency,
-		       o.shipping_addr, o.note, o.created_at
+		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
+		LEFT JOIN payments p ON p.order_id = o.id
 		WHERE o.id = $1 AND o.buyer_id = $2
-	`, id, userID).Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt)
+	`, id, userID).Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus)
 
 	if err == pgx.ErrNoRows {
 		writeError(w, http.StatusNotFound, "Zamówienie nie znalezione")
@@ -316,6 +329,9 @@ func handleGetOrder(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(shippingRaw, &o.ShippingAddr)
 	if note != nil {
 		o.Note = *note
+	}
+	if paymentStatus != nil {
+		o.PaymentStatus = *paymentStatus
 	}
 
 	o.Items = fetchOrderItems(ctx, id)
@@ -345,10 +361,11 @@ func handleListSellerOrders(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := dbPool.Query(ctx, `
 		SELECT o.id, o.shop_id, s.name, u.username, o.status, o.total_amount, o.currency,
-		       o.shipping_addr, o.note, o.created_at
+		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
 		JOIN users u ON u.id = o.buyer_id
+		LEFT JOIN payments p ON p.order_id = o.id
 		WHERE o.shop_id = $1
 		ORDER BY o.created_at DESC
 	`, shopID)
@@ -363,13 +380,17 @@ func handleListSellerOrders(w http.ResponseWriter, r *http.Request) {
 		var o OrderView
 		var shippingRaw []byte
 		var note *string
-		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.BuyerUsername, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt); err != nil {
+		var paymentStatus *string
+		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.BuyerUsername, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu zamówień")
 			return
 		}
 		json.Unmarshal(shippingRaw, &o.ShippingAddr)
 		if note != nil {
 			o.Note = *note
+		}
+		if paymentStatus != nil {
+			o.PaymentStatus = *paymentStatus
 		}
 		orders = append(orders, o)
 	}

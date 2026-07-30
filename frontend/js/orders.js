@@ -10,6 +10,12 @@ const orderStatusLabels = {
   refunded: 'Zwrócone',
 };
 
+const paymentStatusLabels = {
+  completed: 'Płatność zrealizowana',
+  pending: 'Oczekuje na płatność',
+  failed: 'Płatność odrzucona',
+};
+
 function requireLogin() {
   const user = getCurrentUser();
   if (!user) {
@@ -57,6 +63,20 @@ function renderOrderItem(order, item) {
   `;
 }
 
+function renderPaymentRetry(order) {
+  if (order.status !== 'pending' || order.payment_status === 'completed') return '';
+  return `
+    <form class="order-pay-form" data-order-id="${order.id}">
+      <input type="text" class="order-pay-name" placeholder="Imię i nazwisko na karcie" required />
+      <input type="text" class="order-pay-number" inputmode="numeric" placeholder="Numer karty" required />
+      <input type="text" class="order-pay-expiry" placeholder="MM/RR" required />
+      <input type="text" class="order-pay-cvc" inputmode="numeric" placeholder="CVC" required />
+      <button type="submit">Zapłać ponownie</button>
+      <p class="order-pay-error"></p>
+    </form>
+  `;
+}
+
 function renderOrders(orders) {
   const container = document.getElementById('ordersList');
   if (orders.length === 0) {
@@ -75,9 +95,15 @@ function renderOrders(orders) {
         </div>
         <div class="order-card-status">
           <span class="order-status-badge order-status-${order.status}">${orderStatusLabels[order.status] || order.status}</span>
+          ${
+            order.payment_status && order.payment_status !== 'completed'
+              ? `<span class="order-status-badge order-payment-${order.payment_status}">${paymentStatusLabels[order.payment_status] || order.payment_status}</span>`
+              : ''
+          }
           <p class="order-card-total">${parseFloat(order.total_amount).toFixed(2)} ${order.currency}</p>
         </div>
       </div>
+      ${renderPaymentRetry(order)}
       <div class="order-card-items">
         ${(order.items || []).map((item) => renderOrderItem(order, item)).join('')}
       </div>
@@ -85,6 +111,49 @@ function renderOrders(orders) {
   `
     )
     .join('');
+
+  container.querySelectorAll('.order-pay-form').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const orderId = form.dataset.orderId;
+      const errorEl = form.querySelector('.order-pay-error');
+      const submitBtn = form.querySelector('button');
+      errorEl.textContent = '';
+
+      const expiryMatch = form.querySelector('.order-pay-expiry').value.trim().match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
+      if (!expiryMatch) {
+        errorEl.textContent = 'Nieprawidłowa data ważności (format MM/RR).';
+        return;
+      }
+      const expMonth = parseInt(expiryMatch[1], 10);
+      const expYear = expiryMatch[2].length === 2 ? 2000 + parseInt(expiryMatch[2], 10) : parseInt(expiryMatch[2], 10);
+
+      submitBtn.disabled = true;
+      try {
+        const res = await authFetch(`/orders/${orderId}/pay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cardholder_name: form.querySelector('.order-pay-name').value.trim(),
+            card_number: form.querySelector('.order-pay-number').value.trim(),
+            exp_month: expMonth,
+            exp_year: expYear,
+            cvc: form.querySelector('.order-pay-cvc').value.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errorEl.textContent = data.message || 'Płatność nie powiodła się.';
+          submitBtn.disabled = false;
+          return;
+        }
+        loadOrders();
+      } catch (err) {
+        errorEl.textContent = 'Nie udało się połączyć z serwerem.';
+        submitBtn.disabled = false;
+      }
+    });
+  });
 
   container.querySelectorAll('.order-review-form').forEach((form) => {
     form.addEventListener('submit', async (e) => {
