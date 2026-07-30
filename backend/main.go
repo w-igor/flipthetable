@@ -48,6 +48,10 @@ func main() {
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
 
+	mux.HandleFunc("POST /messages", requireAuth(handleSendMessage))
+	mux.HandleFunc("GET /messages/conversations", requireAuth(handleListConversations))
+	mux.HandleFunc("GET /messages/with/{userId}", requireAuth(handleGetThread))
+
 	mux.HandleFunc("GET /favorites", requireAuth(handleListFavorites))
 	mux.HandleFunc("GET /favorites/ids", requireAuth(handleListFavoriteIDs))
 	mux.HandleFunc("POST /favorites", requireAuth(handleAddFavorite))

@@ -36,9 +36,20 @@
 }
 
 .shop-profile-desc {
-  margin: 0;
+  margin: 0 0 12px;
   max-width: 640px;
   line-height: 1.5;
+}
+
+.shop-profile-contact-btn {
+  display: inline-block;
+  padding: 8px 18px;
+  background: var(--etsy-orange);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .shop-profile-layout {

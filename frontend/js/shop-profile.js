@@ -19,9 +19,17 @@ function renderShopHeader(shop) {
         <h1>${escapeHtml(shop.name)}</h1>
         <p class="shop-profile-meta">${shop.listings_count} ${shop.listings_count === 1 ? 'oferta' : 'ofert'} · ${shop.sales_count} sprzedanych</p>
         ${shop.description ? `<p class="shop-profile-desc">${escapeHtml(shop.description)}</p>` : ''}
+        ${contactSellerButtonHtml(shop)}
       </div>
     </div>
   `;
+}
+
+function contactSellerButtonHtml(shop) {
+  const user = getCurrentUser();
+  if (!user || user.id === shop.owner_id) return '';
+  const url = `messages.html?with=${shop.owner_id}&name=${encodeURIComponent(shop.name)}`;
+  return `<a href="${url}" class="shop-profile-contact-btn">Napisz do sprzedawcy</a>`;
 }
 
 function renderShopListings(items) {
