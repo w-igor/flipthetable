@@ -35,6 +35,7 @@ function updateHeaderForAuth() {
 
   const dashboardLabel = user.is_seller ? 'Panel sprzedawcy' : 'Zostań sprzedawcą';
   authActions.innerHTML = `
+    <a href="favorites.html">Ulubione</a>
     <a href="orders.html">Moje zamówienia</a>
     <a href="dashboard.html">${dashboardLabel}</a>
     <span>Cześć, ${escapeHtml(user.username)}</span>

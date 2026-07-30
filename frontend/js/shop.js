@@ -1,5 +1,3 @@
-const API_URL = window.API_URL || 'http://localhost:8080';
-
 const state = {
   category: '',
   q: '',
@@ -14,6 +12,44 @@ const state = {
 function formatPrice(price, currency) {
   const value = parseFloat(price).toFixed(2);
   return `${value} ${currency}`;
+}
+
+let favoriteIds = new Set();
+
+async function loadFavoriteIds() {
+  if (!getCurrentUser()) return;
+  try {
+    const res = await authFetch('/favorites/ids');
+    if (res.ok) {
+      favoriteIds = new Set(await res.json());
+    }
+  } catch (err) {
+    // ulubione są dodatkiem, brak ich nie blokuje reszty strony
+  }
+}
+
+async function toggleFavorite(listingId) {
+  if (!getCurrentUser()) {
+    window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname.split('/').pop() + window.location.search)}`;
+    return null;
+  }
+  const isFav = favoriteIds.has(listingId);
+  try {
+    if (isFav) {
+      await authFetch(`/favorites/${listingId}`, { method: 'DELETE' });
+      favoriteIds.delete(listingId);
+    } else {
+      await authFetch('/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: listingId }),
+      });
+      favoriteIds.add(listingId);
+    }
+    return !isFav;
+  } catch (err) {
+    return null;
+  }
 }
 
 async function loadCategories() {
@@ -83,8 +119,10 @@ function renderListings(data) {
 
     const img = item.primary_photo || 'https://picsum.photos/seed/placeholder/600/600';
     const outOfStock = item.quantity === 0;
+    const isFav = favoriteIds.has(item.id);
 
     card.innerHTML = `
+      <button class="listing-card-fav-btn ${isFav ? 'active' : ''}" type="button" title="Ulubione">${isFav ? '♥' : '♡'}</button>
       <img src="${img}" alt="${escapeHtml(item.title)}" loading="lazy" />
       <div class="listing-card-body">
         <p class="listing-card-shop">${escapeHtml(item.shop_name)}</p>
@@ -108,6 +146,19 @@ function renderListings(data) {
         }, 1200);
       });
     }
+
+    const favBtn = card.querySelector('.listing-card-fav-btn');
+    favBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      favBtn.disabled = true;
+      const result = await toggleFavorite(item.id);
+      if (result !== null) {
+        favBtn.classList.toggle('active', result);
+        favBtn.textContent = result ? '♥' : '♡';
+      }
+      favBtn.disabled = false;
+    });
 
     grid.appendChild(card);
   });
@@ -162,9 +213,10 @@ async function loadListings() {
   }
 }
 
-function initShopPage() {
+async function initShopPage() {
   updateHeaderForAuth();
   loadCategories();
+  await loadFavoriteIds();
   loadListings();
 
   document.getElementById('searchForm').addEventListener('submit', (e) => {

@@ -60,6 +60,19 @@
       font-weight: 700;
       cursor: pointer;
     }
+    .listing-detail-fav-btn {
+      margin-top: 12px;
+      padding: 10px 18px;
+      background: #fff;
+      border: 1px solid #d5d0c9;
+      border-radius: 24px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .listing-detail-fav-btn.active {
+      color: #e0245e;
+      border-color: #e0245e;
+    }
     .back-link {
       display: inline-block;
       margin: 16px 24px 0;
@@ -228,6 +241,7 @@
                 <button id="addToCartBtn" class="listing-detail-add-btn">Dodaj do koszyka</button>
               </div>
             ` : ''}
+            <button id="favToggleBtn" class="listing-detail-fav-btn" type="button">♡ Dodaj do ulubionych</button>
           </div>
         `;
 
@@ -241,11 +255,58 @@
           });
         }
 
+        setupFavoriteButton(item.id);
         loadReviews(item.id);
         setupReviewForm(item.id);
       } catch (err) {
         container.innerHTML = '<p>Błąd ładowania produktu.</p>';
       }
+    }
+
+    async function setupFavoriteButton(listingId) {
+      const btn = document.getElementById('favToggleBtn');
+      const user = getCurrentUser();
+      if (!user) {
+        btn.addEventListener('click', () => {
+          window.location.href = `login.html?redirect=${encodeURIComponent('listing.html?id=' + listingId)}`;
+        });
+        return;
+      }
+
+      let isFav = false;
+      try {
+        const res = await authFetch('/favorites/ids');
+        if (res.ok) {
+          isFav = (await res.json()).includes(listingId);
+        }
+      } catch (err) {
+        // ulubione są dodatkiem, brak ich nie blokuje reszty strony
+      }
+
+      const render = () => {
+        btn.classList.toggle('active', isFav);
+        btn.textContent = isFav ? '♥ W ulubionych' : '♡ Dodaj do ulubionych';
+      };
+      render();
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          if (isFav) {
+            await authFetch(`/favorites/${listingId}`, { method: 'DELETE' });
+          } else {
+            await authFetch('/favorites', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ listing_id: listingId }),
+            });
+          }
+          isFav = !isFav;
+          render();
+        } finally {
+          btn.disabled = false;
+        }
+      });
     }
 
     function renderReviews(reviews) {

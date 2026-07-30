@@ -48,6 +48,11 @@ func main() {
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
 
+	mux.HandleFunc("GET /favorites", requireAuth(handleListFavorites))
+	mux.HandleFunc("GET /favorites/ids", requireAuth(handleListFavoriteIDs))
+	mux.HandleFunc("POST /favorites", requireAuth(handleAddFavorite))
+	mux.HandleFunc("DELETE /favorites/{listingId}", requireAuth(handleRemoveFavorite))
+
 	mux.HandleFunc("POST /uploads", requireAuth(handleUploadPhoto))
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
 

@@ -212,6 +212,29 @@ body {
   text-decoration: none;
   color: var(--etsy-black);
   display: block;
+  position: relative;
+}
+
+.listing-card-fav-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+.listing-card-fav-btn.active {
+  color: #e0245e;
 }
 
 .listing-card:hover {
