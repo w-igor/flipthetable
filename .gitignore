@@ -2,3 +2,5 @@
 *.test
 .env
 .grepai/
+backend/uploads/*
+!backend/uploads/.gitkeep

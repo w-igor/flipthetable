@@ -104,6 +104,15 @@
   margin-bottom: 6px;
 }
 
+.dashboard-photo-preview {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--etsy-border);
+  margin-top: 8px;
+}
+
 .dashboard-field input,
 .dashboard-field textarea,
 .dashboard-field select {

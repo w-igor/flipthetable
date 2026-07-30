@@ -32,12 +32,16 @@
           <textarea id="shopDescription" rows="3"></textarea>
         </div>
         <div class="dashboard-field">
-          <label for="shopAvatarUrl">Adres URL logo (opcjonalnie)</label>
-          <input type="url" id="shopAvatarUrl" placeholder="https://..." />
+          <label for="shopAvatarFile">Logo (opcjonalnie)</label>
+          <input type="file" id="shopAvatarFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <input type="hidden" id="shopAvatarUrl" />
+          <img id="shopAvatarPreview" class="dashboard-photo-preview" style="display:none;" />
         </div>
         <div class="dashboard-field">
-          <label for="shopBannerUrl">Adres URL banera (opcjonalnie)</label>
-          <input type="url" id="shopBannerUrl" placeholder="https://..." />
+          <label for="shopBannerFile">Baner (opcjonalnie)</label>
+          <input type="file" id="shopBannerFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <input type="hidden" id="shopBannerUrl" />
+          <img id="shopBannerPreview" class="dashboard-photo-preview" style="display:none;" />
         </div>
         <button type="submit" class="dashboard-submit-btn">Załóż sklep</button>
       </form>
@@ -68,12 +72,16 @@
               <textarea id="editShopDescription" rows="3"></textarea>
             </div>
             <div class="dashboard-field">
-              <label for="editShopAvatarUrl">Adres URL logo</label>
-              <input type="url" id="editShopAvatarUrl" placeholder="https://..." />
+              <label for="editShopAvatarFile">Logo</label>
+              <input type="file" id="editShopAvatarFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <input type="hidden" id="editShopAvatarUrl" />
+              <img id="editShopAvatarPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
             <div class="dashboard-field">
-              <label for="editShopBannerUrl">Adres URL banera</label>
-              <input type="url" id="editShopBannerUrl" placeholder="https://..." />
+              <label for="editShopBannerFile">Baner</label>
+              <input type="file" id="editShopBannerFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <input type="hidden" id="editShopBannerUrl" />
+              <img id="editShopBannerPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
             <p class="dashboard-hint">Publiczny profil: <a id="shopPublicLink" href="#" target="_blank">—</a></p>
             <button type="submit" class="dashboard-submit-btn">Zapisz zmiany</button>
@@ -113,8 +121,10 @@
               <select id="listingCategory"></select>
             </div>
             <div class="dashboard-field">
-              <label for="listingPhotoUrl">Adres URL zdjęcia</label>
-              <input type="url" id="listingPhotoUrl" placeholder="https://..." />
+              <label for="listingPhotoFile">Zdjęcie</label>
+              <input type="file" id="listingPhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <input type="hidden" id="listingPhotoUrl" />
+              <img id="listingPhotoPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
             <div class="dashboard-form-actions">
               <button type="submit" class="dashboard-submit-btn" id="listingSubmitBtn">Dodaj ofertę</button>

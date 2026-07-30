@@ -44,11 +44,39 @@ async function loadCategories() {
   }
 }
 
+function setPhotoPreview(previewId, url) {
+  const img = document.getElementById(previewId);
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+  }
+}
+
+function bindPhotoUpload(fileInputId, hiddenInputId, previewId) {
+  document.getElementById(fileInputId).addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    clearDashboardBanner();
+    const url = await uploadPhoto(file);
+    if (!url) {
+      showDashboardBanner('Nie udało się wgrać zdjęcia.');
+      return;
+    }
+    document.getElementById(hiddenInputId).value = url;
+    setPhotoPreview(previewId, url);
+  });
+}
+
 function fillEditShopForm(shop) {
   document.getElementById('editShopName').value = shop.name || '';
   document.getElementById('editShopDescription').value = shop.description || '';
   document.getElementById('editShopAvatarUrl').value = shop.avatar_url || '';
   document.getElementById('editShopBannerUrl').value = shop.banner_url || '';
+  setPhotoPreview('editShopAvatarPreview', shop.avatar_url);
+  setPhotoPreview('editShopBannerPreview', shop.banner_url);
   const link = document.getElementById('shopPublicLink');
   link.href = `shop-profile.html?id=${shop.id}`;
   link.textContent = `shop-profile.html?id=${shop.id}`;
@@ -119,6 +147,8 @@ function resetListingForm() {
   document.getElementById('listingQuantity').value = '1';
   document.getElementById('listingCategory').value = '';
   document.getElementById('listingPhotoUrl').value = '';
+  document.getElementById('listingPhotoFile').value = '';
+  setPhotoPreview('listingPhotoPreview', null);
   document.getElementById('listingSubmitBtn').textContent = 'Dodaj ofertę';
 }
 
@@ -130,6 +160,8 @@ function editListing(item) {
   document.getElementById('listingQuantity').value = item.quantity;
   document.getElementById('listingCategory').value = item.category_id || '';
   document.getElementById('listingPhotoUrl').value = item.primary_photo || '';
+  document.getElementById('listingPhotoFile').value = '';
+  setPhotoPreview('listingPhotoPreview', item.primary_photo);
   document.getElementById('listingSubmitBtn').textContent = 'Zapisz zmiany';
   document.getElementById('listingForm').style.display = 'flex';
 }
@@ -273,6 +305,12 @@ async function loadOrders() {
 }
 
 function bindEvents() {
+  bindPhotoUpload('shopAvatarFile', 'shopAvatarUrl', 'shopAvatarPreview');
+  bindPhotoUpload('shopBannerFile', 'shopBannerUrl', 'shopBannerPreview');
+  bindPhotoUpload('editShopAvatarFile', 'editShopAvatarUrl', 'editShopAvatarPreview');
+  bindPhotoUpload('editShopBannerFile', 'editShopBannerUrl', 'editShopBannerPreview');
+  bindPhotoUpload('listingPhotoFile', 'listingPhotoUrl', 'listingPhotoPreview');
+
   document.getElementById('createShopForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     clearDashboardBanner();

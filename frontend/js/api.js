@@ -73,3 +73,13 @@ async function authFetch(path, options = {}) {
 
   return res;
 }
+
+// Uploads a single image file and resolves to its public URL, or null on failure.
+async function uploadPhoto(file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await authFetch('/uploads', { method: 'POST', body: formData });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.url;
+}

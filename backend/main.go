@@ -48,6 +48,9 @@ func main() {
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
 
+	mux.HandleFunc("POST /uploads", requireAuth(handleUploadPhoto))
+	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
+
 	mux.HandleFunc("POST /orders", requireAuth(handleCreateOrder))
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))
 	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
