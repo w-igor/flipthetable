@@ -10,10 +10,11 @@ import (
 )
 
 type listingLine struct {
-	ShopID   string
-	Price    string
-	Quantity int
-	Title    string
+	ShopID      string
+	ShopOwnerID string
+	Price       string
+	Quantity    int
+	Title       string
 }
 
 func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -60,10 +61,11 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := tx.Query(ctx, `
-		SELECT id, shop_id, price, quantity, title
-		FROM listings
-		WHERE id = ANY($1::uuid[]) AND is_active = TRUE
-		FOR UPDATE
+		SELECT l.id, l.shop_id, s.owner_id, l.price, l.quantity, l.title
+		FROM listings l
+		JOIN shops s ON s.id = l.shop_id
+		WHERE l.id = ANY($1::uuid[]) AND l.is_active = TRUE
+		FOR UPDATE OF l
 	`, listingIDs)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się zweryfikować produktów")
@@ -74,7 +76,7 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var id string
 		var l listingLine
-		if err := rows.Scan(&id, &l.ShopID, &l.Price, &l.Quantity, &l.Title); err != nil {
+		if err := rows.Scan(&id, &l.ShopID, &l.ShopOwnerID, &l.Price, &l.Quantity, &l.Title); err != nil {
 			rows.Close()
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu produktów")
 			return
@@ -88,6 +90,10 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		l, found := listings[item.ListingID]
 		if !found {
 			writeError(w, http.StatusBadRequest, "Jeden z produktów już nie istnieje")
+			return
+		}
+		if l.ShopOwnerID == userID {
+			writeError(w, http.StatusBadRequest, "Nie możesz kupić własnej oferty \""+l.Title+"\"")
 			return
 		}
 		if l.Quantity < item.Quantity {
