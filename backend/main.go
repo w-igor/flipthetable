@@ -50,6 +50,7 @@ func main() {
 
 	mux.HandleFunc("POST /messages", requireAuth(handleSendMessage))
 	mux.HandleFunc("GET /messages/conversations", requireAuth(handleListConversations))
+	mux.HandleFunc("GET /messages/unread-count", requireAuth(handleUnreadMessageCount))
 	mux.HandleFunc("GET /messages/with/{userId}", requireAuth(handleGetThread))
 
 	mux.HandleFunc("GET /favorites", requireAuth(handleListFavorites))

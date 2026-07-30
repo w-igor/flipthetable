@@ -35,15 +35,36 @@ function updateHeaderForAuth() {
 
   const dashboardLabel = user.is_seller ? 'Panel sprzedawcy' : 'Zostań sprzedawcą';
   authActions.innerHTML = `
-    <a href="favorites.html">Ulubione</a>
-    <a href="messages.html">Wiadomości</a>
-    <a href="orders.html">Moje zamówienia</a>
-    <a href="dashboard.html">${dashboardLabel}</a>
-    <span>Cześć, ${escapeHtml(user.username)}</span>
-    <a href="#" id="logoutLink">Wyloguj</a>
+    <a href="favorites.html" class="nav-icon-link" title="Ulubione" aria-label="Ulubione">${Icons.heart}</a>
+    <a href="messages.html" class="nav-icon-link" title="Wiadomości" aria-label="Wiadomości">${Icons.messageCircle}<span id="navUnreadBadge" class="nav-unread-badge" style="display:none;"></span></a>
+    <a href="orders.html" class="nav-icon-link" title="Moje zamówienia" aria-label="Moje zamówienia">${Icons.package}</a>
+    <a href="dashboard.html" class="nav-icon-link" title="${dashboardLabel}" aria-label="${dashboardLabel}">${Icons.store}</a>
+    <span class="nav-user-chip" title="${escapeHtml(user.username)}">${Icons.userRound}<span class="nav-username">${escapeHtml(user.username)}</span></span>
+    <a href="#" id="logoutLink" class="nav-icon-link" title="Wyloguj" aria-label="Wyloguj">${Icons.logOut}</a>
   `;
   document.getElementById('logoutLink').addEventListener('click', (e) => {
     e.preventDefault();
     logout();
   });
+
+  refreshUnreadBadge();
+  setInterval(refreshUnreadBadge, 20000);
+}
+
+async function refreshUnreadBadge() {
+  const badge = document.getElementById('navUnreadBadge');
+  if (!badge || typeof authFetch !== 'function') return;
+  try {
+    const res = await authFetch('/messages/unread-count');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.count > 0) {
+      badge.textContent = data.count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (err) {
+    // odznaka po prostu nie odświeży się w tej turze
+  }
 }

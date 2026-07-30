@@ -2,7 +2,9 @@
   position: relative;
   background: none;
   border: none;
-  font-size: 22px;
+  color: var(--etsy-black);
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
   padding: 6px 10px;
 }

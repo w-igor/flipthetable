@@ -91,6 +91,51 @@ body {
   text-decoration: underline;
 }
 
+.nav-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--etsy-black);
+}
+
+a.nav-icon-link:hover {
+  background: var(--etsy-bg);
+  text-decoration: none;
+}
+
+.nav-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--etsy-black);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nav-username {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-unread-badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--etsy-orange);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .shop-layout {
   display: flex;
   max-width: 1280px;

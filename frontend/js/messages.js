@@ -91,6 +91,7 @@ async function openThread(userId, name) {
     }
     renderThread(await res.json());
     loadConversations();
+    if (typeof refreshUnreadBadge === 'function') refreshUnreadBadge();
   } catch (err) {
     document.getElementById('threadBody').innerHTML = '<p class="messages-empty">Błąd ładowania wiadomości.</p>';
   }

@@ -1,5 +1,3 @@
-const API_URL = window.API_URL || 'http://localhost:8080';
-
 function formatPrice(price, currency) {
   return `${parseFloat(price).toFixed(2)} ${currency}`;
 }

@@ -108,6 +108,25 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, conversations)
 }
 
+func handleUnreadMessageCount(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var count int
+	if err := dbPool.QueryRow(ctx, `SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE`, userID).Scan(&count); err != nil {
+		writeError(w, http.StatusInternalServerError, "Nie udało się pobrać liczby wiadomości")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]int{"count": count})
+}
+
 func handleGetThread(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
