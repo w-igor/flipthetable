@@ -151,6 +151,50 @@
   margin-top: 8px;
 }
 
+.dashboard-photos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dashboard-photo-thumb {
+  position: relative;
+  width: 88px;
+  height: 88px;
+}
+
+.dashboard-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--etsy-border);
+}
+
+.dashboard-photo-thumb.is-primary img {
+  border-color: var(--etsy-orange);
+  border-width: 2px;
+}
+
+.dashboard-photo-thumb-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: #222;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .dashboard-field input,
 .dashboard-field textarea,
 .dashboard-field select {
@@ -207,6 +251,27 @@
   margin-top: 20px;
 }
 
+.dashboard-listings-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.dashboard-listings-filters input,
+.dashboard-listings-filters select {
+  padding: 9px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.dashboard-listings-filters input {
+  flex: 1;
+  min-width: 180px;
+}
+
 .dashboard-row {
   display: flex;
   align-items: center;
@@ -248,13 +313,23 @@
 }
 
 .dashboard-edit-btn,
-.dashboard-toggle-btn {
+.dashboard-toggle-btn,
+.dashboard-delete-btn {
   padding: 7px 14px;
   border: 1px solid var(--etsy-border);
   background: var(--etsy-card);
   border-radius: 18px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.dashboard-delete-btn {
+  color: #c92a2a;
+  border-color: #f1aeae;
+}
+
+.dashboard-delete-btn:hover {
+  background: #fdeaea;
 }
 
 .dashboard-order-status {

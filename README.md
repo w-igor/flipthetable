@@ -54,7 +54,8 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ### Ulubione i wiadomości
 - ✅ Ulubione produkty (serduszko w katalogu, strona `pages/favorites.html`)
-- ✅ Wiadomości kupujący–sprzedawca, licznik nieprzeczytanych w headerze (polling)
+- ✅ Wiadomości kupujący–sprzedawca, licznik nieprzeczytanych w headerze
+- ✅ Powiadomienia push na żywo przez WebSockety (`GET /ws`, `backend/ws.go`) — nowe wiadomości i licznik nieprzeczytanych aktualizują się bez odpytywania serwera; polling co 60s zostaje tylko jako fallback na wypadek zerwanego połączenia
 
 ### Zdjęcia
 - ✅ Lokalny upload zdjęć ofert i logo/baneru sklepu (`POST /uploads`)
@@ -70,7 +71,6 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ## Niezrobione jeszcze ❌
 
-- ❌ WebSockety / prawdziwe powiadomienia push (obecnie tylko polling dla licznika nieprzeczytanych wiadomości)
 - ❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
 - ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
 - ❌ Zgłaszanie ofert/sklepów przez użytkowników (kolejka moderacji) — admin musi na razie ręcznie przeglądać listy

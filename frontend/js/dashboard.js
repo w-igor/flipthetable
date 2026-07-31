@@ -40,6 +40,13 @@ async function loadCategories() {
     select.innerHTML =
       '<option value="">Bez kategorii</option>' +
       categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+    const filterSelect = document.getElementById('listingFilterCategory');
+    if (filterSelect) {
+      filterSelect.innerHTML =
+        '<option value="">Wszystkie kategorie</option>' +
+        categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    }
   } catch (err) {
     console.error('Nie udało się pobrać kategorii', err);
   }
@@ -168,6 +175,56 @@ function bindPhotoUpload(fileInputId, hiddenInputId, previewId) {
   });
 }
 
+const MAX_LISTING_PHOTOS = 8;
+let listingPhotoUrls = [];
+
+function renderListingPhotosGrid() {
+  const grid = document.getElementById('listingPhotosGrid');
+  grid.innerHTML = listingPhotoUrls
+    .map(
+      (url, i) => `
+    <div class="dashboard-photo-thumb ${i === 0 ? 'is-primary' : ''}" data-index="${i}">
+      <img src="${url}" alt="Zdjęcie oferty ${i + 1}" />
+      <button type="button" class="dashboard-photo-thumb-remove" data-index="${i}" title="Usuń zdjęcie">&times;</button>
+    </div>
+  `
+    )
+    .join('');
+
+  grid.querySelectorAll('.dashboard-photo-thumb-remove').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      listingPhotoUrls.splice(parseInt(btn.dataset.index, 10), 1);
+      renderListingPhotosGrid();
+    });
+  });
+
+  document.getElementById('listingPhotoFile').disabled = listingPhotoUrls.length >= MAX_LISTING_PHOTOS;
+}
+
+function bindListingPhotosUpload() {
+  document.getElementById('listingPhotoFile').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    clearDashboardBanner();
+
+    const remaining = MAX_LISTING_PHOTOS - listingPhotoUrls.length;
+    if (files.length > remaining) {
+      showDashboardBanner(`Można dodać jeszcze tylko ${remaining} zdjęć (maks. ${MAX_LISTING_PHOTOS}).`);
+    }
+
+    for (const file of files.slice(0, remaining)) {
+      const url = await uploadPhoto(file);
+      if (!url) {
+        showDashboardBanner('Nie udało się wgrać jednego ze zdjęć.');
+        continue;
+      }
+      listingPhotoUrls.push(url);
+    }
+    renderListingPhotosGrid();
+  });
+}
+
 function fillEditShopForm(shop) {
   document.getElementById('editShopName').value = shop.name || '';
   document.getElementById('editShopDescription').value = shop.description || '';
@@ -245,10 +302,10 @@ function resetListingForm() {
   document.getElementById('listingPrice').value = '';
   document.getElementById('listingQuantity').value = '1';
   document.getElementById('listingCategory').value = '';
-  document.getElementById('listingPhotoUrl').value = '';
   document.getElementById('listingPhotoFile').value = '';
   document.getElementById('listingShippingProfile').value = '';
-  setPhotoPreview('listingPhotoPreview', null);
+  listingPhotoUrls = [];
+  renderListingPhotosGrid();
   document.getElementById('listingSubmitBtn').textContent = 'Dodaj ofertę';
   document.getElementById('variantQuantityHint').style.display = 'none';
   resetVariantEditor();
@@ -262,46 +319,44 @@ async function editListing(item) {
   document.getElementById('listingQuantity').value = item.quantity;
   document.getElementById('listingCategory').value = item.category_id || '';
   document.getElementById('listingShippingProfile').value = item.shipping_profile_id || '';
-  document.getElementById('listingPhotoUrl').value = item.primary_photo || '';
   document.getElementById('listingPhotoFile').value = '';
-  setPhotoPreview('listingPhotoPreview', item.primary_photo);
+  listingPhotoUrls = item.primary_photo ? [item.primary_photo] : [];
+  renderListingPhotosGrid();
   document.getElementById('listingSubmitBtn').textContent = 'Zapisz zmiany';
   document.getElementById('variantQuantityHint').style.display = item.has_variants ? 'block' : 'none';
   document.getElementById('listingForm').style.display = 'flex';
 
-  if (item.has_variants) {
-    try {
-      const res = await authFetch(`/seller/listings/${item.id}`);
-      if (res.ok) populateVariantEditor(await res.json());
-    } catch (err) {
-      showVariantBanner('Nie udało się pobrać wariantów oferty.');
+  try {
+    const res = await authFetch(`/seller/listings/${item.id}`);
+    if (res.ok) {
+      const full = await res.json();
+      listingPhotoUrls = (full.photos || []).map((p) => p.url);
+      renderListingPhotosGrid();
+      if (item.has_variants) populateVariantEditor(full);
     }
-  } else {
-    resetVariantEditor();
+  } catch (err) {
+    if (item.has_variants) showVariantBanner('Nie udało się pobrać wariantów oferty.');
   }
+  if (!item.has_variants) resetVariantEditor();
 }
 
 async function toggleListingActive(item) {
   clearDashboardBanner();
   try {
-    let res;
-    if (item.is_active) {
-      res = await authFetch(`/listings/${item.id}`, { method: 'DELETE' });
-    } else {
-      res = await authFetch(`/listings/${item.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: item.title,
-          description: item.description || '',
-          category_id: item.category_id || null,
-          price: item.price,
-          currency: item.currency,
-          quantity: item.quantity,
-          is_active: true,
-        }),
-      });
-    }
+    const res = await authFetch(`/listings/${item.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: item.title,
+        description: item.description || '',
+        category_id: item.category_id || null,
+        price: item.price,
+        currency: item.currency,
+        quantity: item.quantity,
+        shipping_profile_id: item.shipping_profile_id || null,
+        is_active: !item.is_active,
+      }),
+    });
     const data = await res.json();
     if (!res.ok) {
       showDashboardBanner(data.message || 'Nie udało się zaktualizować oferty.');
@@ -313,18 +368,49 @@ async function toggleListingActive(item) {
   }
 }
 
+async function deleteListing(item) {
+  clearDashboardBanner();
+  if (!confirm(`Usunąć ofertę "${item.title}"? Tej operacji nie można cofnąć.`)) return;
+  try {
+    const res = await authFetch(`/listings/${item.id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      showDashboardBanner(data.message || 'Nie udało się usunąć oferty.');
+      return;
+    }
+    loadListings();
+  } catch (err) {
+    showDashboardBanner('Nie udało się połączyć z serwerem.');
+  }
+}
+
+function buildListingFilterQuery() {
+  const params = new URLSearchParams();
+  const search = document.getElementById('listingFilterSearch').value.trim();
+  const status = document.getElementById('listingFilterStatus').value;
+  const categoryId = document.getElementById('listingFilterCategory').value;
+  const sort = document.getElementById('listingFilterSort').value;
+  if (search) params.set('q', search);
+  if (status) params.set('status', status);
+  if (categoryId) params.set('category_id', categoryId);
+  if (sort) params.set('sort', sort);
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
 async function loadListings() {
   const container = document.getElementById('listingsTable');
   container.innerHTML = '<p class="dashboard-empty">Ładowanie...</p>';
   try {
-    const res = await authFetch('/seller/listings');
+    const filterQuery = buildListingFilterQuery();
+    const res = await authFetch(`/seller/listings${filterQuery}`);
     const items = await res.json();
     if (!res.ok) {
       container.innerHTML = '<p class="dashboard-empty">Nie udało się pobrać ofert.</p>';
       return;
     }
     if (items.length === 0) {
-      container.innerHTML = '<p class="dashboard-empty">Nie masz jeszcze żadnych ofert.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${filterQuery ? 'Brak ofert pasujących do filtrów.' : 'Nie masz jeszcze żadnych ofert.'}</p>`;
       return;
     }
 
@@ -340,6 +426,7 @@ async function loadListings() {
         <div class="dashboard-row-actions">
           <button class="dashboard-edit-btn" data-id="${item.id}">Edytuj${item.has_variants ? ' (warianty)' : ''}</button>
           <button class="dashboard-toggle-btn" data-id="${item.id}">${item.is_active ? 'Wyłącz' : 'Włącz'}</button>
+          <button class="dashboard-delete-btn" data-id="${item.id}">Usuń</button>
         </div>
       </div>
     `
@@ -356,6 +443,12 @@ async function loadListings() {
       btn.addEventListener('click', () => {
         const item = items.find((i) => i.id === btn.dataset.id);
         if (item) toggleListingActive(item);
+      });
+    });
+    container.querySelectorAll('.dashboard-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = items.find((i) => i.id === btn.dataset.id);
+        if (item) deleteListing(item);
       });
     });
   } catch (err) {
@@ -638,7 +731,16 @@ function bindEvents() {
   bindPhotoUpload('shopBannerFile', 'shopBannerUrl', 'shopBannerPreview');
   bindPhotoUpload('editShopAvatarFile', 'editShopAvatarUrl', 'editShopAvatarPreview');
   bindPhotoUpload('editShopBannerFile', 'editShopBannerUrl', 'editShopBannerPreview');
-  bindPhotoUpload('listingPhotoFile', 'listingPhotoUrl', 'listingPhotoPreview');
+  bindListingPhotosUpload();
+
+  let listingFilterDebounce = null;
+  document.getElementById('listingFilterSearch').addEventListener('input', () => {
+    clearTimeout(listingFilterDebounce);
+    listingFilterDebounce = setTimeout(loadListings, 300);
+  });
+  document.getElementById('listingFilterStatus').addEventListener('change', loadListings);
+  document.getElementById('listingFilterCategory').addEventListener('change', loadListings);
+  document.getElementById('listingFilterSort').addEventListener('change', loadListings);
 
   document.getElementById('createShopForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -774,7 +876,6 @@ function bindEvents() {
     e.preventDefault();
     clearDashboardBanner();
     const id = document.getElementById('listingId').value;
-    const photoUrl = document.getElementById('listingPhotoUrl').value.trim();
 
     const variantsPayload = buildVariantsPayload();
     if (variantsPayload === null) return;
@@ -786,7 +887,7 @@ function bindEvents() {
       price: document.getElementById('listingPrice').value,
       currency: 'PLN',
       quantity: parseInt(document.getElementById('listingQuantity').value, 10) || 0,
-      photos: photoUrl ? [photoUrl] : [],
+      photos: listingPhotoUrls,
       shipping_profile_id: document.getElementById('listingShippingProfile').value || null,
     };
 

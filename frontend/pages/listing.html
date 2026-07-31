@@ -14,12 +14,36 @@
       display: flex;
       gap: 40px;
     }
-    .listing-detail img {
+    .listing-detail-gallery {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .listing-detail-gallery img.listing-detail-main-img {
       width: 420px;
       height: 420px;
       object-fit: cover;
       border-radius: 8px;
-      flex-shrink: 0;
+    }
+    .listing-detail-thumbs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-width: 420px;
+    }
+    .listing-detail-thumbs img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      opacity: 0.75;
+    }
+    .listing-detail-thumbs img.active {
+      border-color: #f1641e;
+      opacity: 1;
     }
     .listing-detail-info h1 {
       font-size: 24px;
@@ -236,6 +260,7 @@
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>
+  <script src="../js/ws.js"></script>
   <script src="../js/cart.js"></script>
   <script>
     async function loadListing() {
@@ -255,13 +280,22 @@
           return;
         }
         const item = await res.json();
-        const img = (item.photos && item.photos[0] && item.photos[0].url) || 'https://picsum.photos/seed/placeholder/600/600';
+        const photos = (item.photos && item.photos.length > 0)
+          ? item.photos.map((p) => p.url)
+          : ['https://picsum.photos/seed/placeholder/600/600'];
 
         document.title = `${item.title} — FlipTheTable`;
         const hasVariants = item.has_variants && (item.variant_types || []).length > 0;
 
         container.innerHTML = `
-          <img src="${img}" alt="${escapeHtml(item.title)}" />
+          <div class="listing-detail-gallery">
+            <img id="mainListingImg" class="listing-detail-main-img" src="${photos[0]}" alt="${escapeHtml(item.title)}" />
+            ${photos.length > 1 ? `
+              <div class="listing-detail-thumbs" id="listingThumbs">
+                ${photos.map((url, i) => `<img src="${url}" data-index="${i}" class="${i === 0 ? 'active' : ''}" alt="${escapeHtml(item.title)} - zdjęcie ${i + 1}" />`).join('')}
+              </div>
+            ` : ''}
+          </div>
           <div class="listing-detail-info">
             <h1>${escapeHtml(item.title)}</h1>
             <p class="listing-detail-shop">Sprzedawca: <a href="shop-profile.html?id=${item.shop_id}">${escapeHtml(item.shop_name)}</a></p>
@@ -276,6 +310,17 @@
             <button id="favToggleBtn" class="listing-detail-fav-btn" type="button">♡ Dodaj do ulubionych</button>
           </div>
         `;
+
+        const thumbs = document.getElementById('listingThumbs');
+        if (thumbs) {
+          thumbs.querySelectorAll('img').forEach((thumb) => {
+            thumb.addEventListener('click', () => {
+              document.getElementById('mainListingImg').src = photos[parseInt(thumb.dataset.index, 10)];
+              thumbs.querySelectorAll('img').forEach((t) => t.classList.remove('active'));
+              thumb.classList.add('active');
+            });
+          });
+        }
 
         let selectedSku = null;
 

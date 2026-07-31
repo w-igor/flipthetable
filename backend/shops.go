@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var polishDiacritics = strings.NewReplacer(
@@ -307,7 +309,44 @@ func handleGetMyListings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := dbPool.Query(ctx, `
+	q := r.URL.Query()
+	conditions := []string{"l.shop_id = $1"}
+	args := []interface{}{shopID}
+	argN := 1
+	nextArg := func(v interface{}) string {
+		argN++
+		args = append(args, v)
+		return fmt.Sprintf("$%d", argN)
+	}
+
+	switch q.Get("status") {
+	case "active":
+		conditions = append(conditions, "l.is_active = TRUE")
+	case "inactive":
+		conditions = append(conditions, "l.is_active = FALSE")
+	}
+	if categoryID := strings.TrimSpace(q.Get("category_id")); categoryID != "" {
+		conditions = append(conditions, "l.category_id = "+nextArg(categoryID))
+	}
+	if search := strings.TrimSpace(q.Get("q")); search != "" {
+		conditions = append(conditions, "l.title ILIKE "+nextArg("%"+search+"%"))
+	}
+
+	orderBy := "l.created_at DESC"
+	switch q.Get("sort") {
+	case "price_asc":
+		orderBy = "l.price ASC"
+	case "price_desc":
+		orderBy = "l.price DESC"
+	case "stock_asc":
+		orderBy = "l.quantity ASC"
+	case "stock_desc":
+		orderBy = "l.quantity DESC"
+	case "title_asc":
+		orderBy = "l.title ASC"
+	}
+
+	listQuery := `
 		SELECT
 			l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
 			l.price, l.currency, l.quantity, l.is_active, l.has_variants, l.shipping_profile_id, l.views_count,
@@ -315,10 +354,12 @@ func handleGetMyListings(w http.ResponseWriter, r *http.Request) {
 			(SELECT url FROM listing_photos p WHERE p.listing_id = l.id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1)
 		FROM listings l
 		JOIN shops s ON s.id = l.shop_id
-		WHERE l.shop_id = $1
-		ORDER BY l.created_at DESC
+		WHERE ` + strings.Join(conditions, " AND ") + `
+		ORDER BY ` + orderBy + `
 		LIMIT 200
-	`, shopID)
+	`
+
+	rows, err := dbPool.Query(ctx, listQuery, args...)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się pobrać ofert")
 		return
@@ -395,6 +436,9 @@ func validateListingRequest(req *ListingRequest) string {
 	}
 	if req.Currency == "" {
 		req.Currency = "PLN"
+	}
+	if len(req.Photos) > 8 {
+		return "Maksymalnie 8 zdjęć na ofertę"
 	}
 	return ""
 }
@@ -637,9 +681,14 @@ func handleDeleteListing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tag, err := dbPool.Exec(ctx, `
-		UPDATE listings SET is_active = FALSE WHERE id = $1 AND shop_id = $2
+		DELETE FROM listings WHERE id = $1 AND shop_id = $2
 	`, id, shopID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			writeError(w, http.StatusConflict, "Nie można usunąć oferty, która ma powiązane zamówienia — wyłącz ją zamiast tego")
+			return
+		}
 		writeError(w, http.StatusInternalServerError, "Nie udało się usunąć oferty")
 		return
 	}

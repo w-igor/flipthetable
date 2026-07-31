@@ -122,6 +122,15 @@ function bindEvents() {
   });
 }
 
+// Fired by ws.js when the server pushes a new message over the socket.
+function onWSChatMessage(message) {
+  if (activeUserID && (message.sender_id === activeUserID || message.receiver_id === activeUserID)) {
+    openThread(activeUserID, activeUserName);
+  } else {
+    loadConversations();
+  }
+}
+
 async function init() {
   currentUser = requireLogin();
   if (!currentUser) return;

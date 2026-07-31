@@ -15,6 +15,7 @@ function getCurrentUser() {
 }
 
 function logout() {
+  if (typeof disconnectWS === 'function') disconnectWS();
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
@@ -52,22 +53,30 @@ function updateHeaderForAuth() {
   });
 
   refreshUnreadBadge();
-  setInterval(refreshUnreadBadge, 20000);
+  // Live updates arrive over the WebSocket; this is just the slow-poll
+  // fallback in case the socket is down for an extended stretch.
+  setInterval(refreshUnreadBadge, 60000);
+  if (typeof connectWS === 'function') connectWS();
+}
+
+function setUnreadBadge(count) {
+  const badge = document.getElementById('navUnreadBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 async function refreshUnreadBadge() {
-  const badge = document.getElementById('navUnreadBadge');
-  if (!badge || typeof authFetch !== 'function') return;
+  if (typeof authFetch !== 'function') return;
   try {
     const res = await authFetch('/messages/unread-count');
     if (!res.ok) return;
     const data = await res.json();
-    if (data.count > 0) {
-      badge.textContent = data.count;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
-    }
+    setUnreadBadge(data.count);
   } catch (err) {
     // odznaka po prostu nie odświeży się w tej turze
   }

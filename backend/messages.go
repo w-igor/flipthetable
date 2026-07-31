@@ -56,6 +56,12 @@ func handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hub.sendTo(req.ReceiverID, map[string]any{"type": "message", "data": msg})
+	var unread int
+	if err := dbPool.QueryRow(ctx, `SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE`, req.ReceiverID).Scan(&unread); err == nil {
+		hub.sendTo(req.ReceiverID, map[string]any{"type": "unread_count", "count": unread})
+	}
+
 	writeJSON(w, http.StatusCreated, msg)
 }
 
@@ -160,11 +166,18 @@ func handleGetThread(w http.ResponseWriter, r *http.Request) {
 		messages = append(messages, m)
 	}
 
-	if _, err := dbPool.Exec(ctx, `
+	tag, err := dbPool.Exec(ctx, `
 		UPDATE messages SET is_read = TRUE WHERE sender_id = $1 AND receiver_id = $2 AND is_read = FALSE
-	`, otherID, userID); err != nil {
+	`, otherID, userID)
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się oznaczyć wiadomości jako przeczytanych")
 		return
+	}
+	if tag.RowsAffected() > 0 {
+		var unread int
+		if err := dbPool.QueryRow(ctx, `SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE`, userID).Scan(&unread); err == nil {
+			hub.sendTo(userID, map[string]any{"type": "unread_count", "count": unread})
+		}
 	}
 
 	writeJSON(w, http.StatusOK, messages)
