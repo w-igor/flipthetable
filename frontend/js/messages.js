@@ -15,7 +15,7 @@ function requireLogin() {
 function renderConversations() {
   const container = document.getElementById('conversationsList');
   if (conversations.length === 0) {
-    container.innerHTML = '<p class="messages-empty" style="padding:16px;">Brak wiadomości.</p>';
+    container.innerHTML = `<p class="messages-empty" style="padding:16px;">${t('messages.no_messages')}</p>`;
     return;
   }
   container.innerHTML = conversations
@@ -43,7 +43,7 @@ function renderConversations() {
 function renderThread(messages) {
   const body = document.getElementById('threadBody');
   if (messages.length === 0) {
-    body.innerHTML = '<p class="messages-empty">Brak wiadomości. Napisz pierwszą!</p>';
+    body.innerHTML = `<p class="messages-empty">${t('messages.no_messages_write_first')}</p>`;
     return;
   }
   body.innerHTML = messages
@@ -81,19 +81,19 @@ async function openThread(userId, name) {
   header.textContent = name;
   header.style.display = 'block';
   document.getElementById('messageForm').style.display = 'flex';
-  document.getElementById('threadBody').innerHTML = '<p class="messages-empty">Ładowanie...</p>';
+  document.getElementById('threadBody').innerHTML = `<p class="messages-empty">${t('common.loading')}</p>`;
 
   try {
     const res = await authFetch(`/messages/with/${userId}`);
     if (!res.ok) {
-      document.getElementById('threadBody').innerHTML = '<p class="messages-empty">Nie udało się pobrać wiadomości.</p>';
+      document.getElementById('threadBody').innerHTML = `<p class="messages-empty">${t('messages.err_fetch_thread')}</p>`;
       return;
     }
     renderThread(await res.json());
     loadConversations();
     if (typeof refreshUnreadBadge === 'function') refreshUnreadBadge();
   } catch (err) {
-    document.getElementById('threadBody').innerHTML = '<p class="messages-empty">Błąd ładowania wiadomości.</p>';
+    document.getElementById('threadBody').innerHTML = `<p class="messages-empty">${t('messages.err_loading_thread')}</p>`;
   }
 }
 
@@ -120,6 +120,11 @@ function bindEvents() {
       submitBtn.disabled = false;
     }
   });
+}
+
+function onPageLocaleChange() {
+  renderConversations();
+  if (activeUserID) openThread(activeUserID, activeUserName);
 }
 
 // Fired by ws.js when the server pushes a new message over the socket.

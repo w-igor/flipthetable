@@ -1,16 +1,6 @@
 let categories = [];
 let shippingProfiles = [];
 
-const orderStatusLabels = {
-  pending: 'Oczekujące',
-  paid: 'Opłacone',
-  processing: 'W realizacji',
-  shipped: 'Wysłane',
-  delivered: 'Dostarczone',
-  cancelled: 'Anulowane',
-  refunded: 'Zwrócone',
-};
-
 function showDashboardBanner(message, type = 'error') {
   const banner = document.getElementById('dashboardBanner');
   banner.textContent = message;
@@ -38,13 +28,13 @@ async function loadCategories() {
     categories = await res.json();
     const select = document.getElementById('listingCategory');
     select.innerHTML =
-      '<option value="">Bez kategorii</option>' +
+      `<option value="">${t('dashboard.no_category')}</option>` +
       categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
 
     const filterSelect = document.getElementById('listingFilterCategory');
     if (filterSelect) {
       filterSelect.innerHTML =
-        '<option value="">Wszystkie kategorie</option>' +
+        `<option value="">${t('dashboard.filter_all_categories')}</option>` +
         categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     }
   } catch (err) {
@@ -59,9 +49,9 @@ async function loadShippingProfilesForSelect() {
     shippingProfiles = await res.json();
     const select = document.getElementById('listingShippingProfile');
     select.innerHTML =
-      '<option value="">Brak (bez kosztu wysyłki)</option>' +
+      `<option value="">${t('dashboard.no_shipping_profile')}</option>` +
       shippingProfiles
-        .map((sp) => `<option value="${sp.id}">${escapeHtml(sp.name)} — ${parseFloat(sp.price).toFixed(2)} PLN, ${sp.min_days}-${sp.max_days} dni</option>`)
+        .map((sp) => `<option value="${sp.id}">${escapeHtml(sp.name)} — ${parseFloat(sp.price).toFixed(2)} PLN, ${sp.min_days === sp.max_days ? t('common.days_single', { n: sp.min_days }) : t('common.days_range', { min: sp.min_days, max: sp.max_days })}</option>`)
         .join('');
   } catch (err) {
     console.error('Nie udało się pobrać profili wysyłki', err);
@@ -74,7 +64,7 @@ function resetShippingProfileForm() {
   document.getElementById('shippingProfilePrice').value = '';
   document.getElementById('shippingProfileMinDays').value = '';
   document.getElementById('shippingProfileMaxDays').value = '';
-  document.getElementById('shippingProfileSubmitBtn').textContent = 'Dodaj profil';
+  document.getElementById('shippingProfileSubmitBtn').textContent = t('dashboard.add_profile_submit');
 }
 
 function editShippingProfile(sp) {
@@ -83,23 +73,23 @@ function editShippingProfile(sp) {
   document.getElementById('shippingProfilePrice').value = sp.price;
   document.getElementById('shippingProfileMinDays').value = sp.min_days;
   document.getElementById('shippingProfileMaxDays').value = sp.max_days;
-  document.getElementById('shippingProfileSubmitBtn').textContent = 'Zapisz zmiany';
+  document.getElementById('shippingProfileSubmitBtn').textContent = t('common.save_changes');
   document.getElementById('shippingProfileForm').style.display = 'flex';
 }
 
 async function loadShippingProfiles() {
   const container = document.getElementById('shippingProfilesTable');
-  container.innerHTML = '<p class="dashboard-empty">Ładowanie...</p>';
+  container.innerHTML = `<p class="dashboard-empty">${t('common.loading')}</p>`;
   try {
     const res = await authFetch('/seller/shipping-profiles');
     const items = await res.json();
     if (!res.ok) {
-      container.innerHTML = '<p class="dashboard-empty">Nie udało się pobrać profili wysyłki.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_fetch_shipping_profiles')}</p>`;
       return;
     }
     shippingProfiles = items;
     if (items.length === 0) {
-      container.innerHTML = '<p class="dashboard-empty">Nie masz jeszcze żadnych profili wysyłki.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${t('dashboard.no_shipping_profiles_yet')}</p>`;
       return;
     }
     container.innerHTML = items
@@ -108,11 +98,11 @@ async function loadShippingProfiles() {
       <div class="dashboard-row" data-id="${sp.id}">
         <div class="dashboard-row-info">
           <p class="dashboard-row-title">${escapeHtml(sp.name)}</p>
-          <p class="dashboard-row-meta">${parseFloat(sp.price).toFixed(2)} PLN · ${sp.min_days === sp.max_days ? `${sp.min_days} dni` : `${sp.min_days}-${sp.max_days} dni`} dostawy</p>
+          <p class="dashboard-row-meta">${parseFloat(sp.price).toFixed(2)} PLN · ${sp.min_days === sp.max_days ? t('common.days_single', { n: sp.min_days }) : t('common.days_range', { min: sp.min_days, max: sp.max_days })} ${t('shipping_profile.delivery_suffix')}</p>
         </div>
         <div class="dashboard-row-actions">
-          <button class="dashboard-edit-btn" data-id="${sp.id}">Edytuj</button>
-          <button class="dashboard-toggle-btn" data-id="${sp.id}">Usuń</button>
+          <button class="dashboard-edit-btn" data-id="${sp.id}">${t('common.edit')}</button>
+          <button class="dashboard-toggle-btn" data-id="${sp.id}">${t('common.delete')}</button>
         </div>
       </div>
     `
@@ -129,23 +119,23 @@ async function loadShippingProfiles() {
       btn.addEventListener('click', async () => {
         const sp = items.find((s) => s.id === btn.dataset.id);
         if (!sp) return;
-        if (!confirm(`Usunąć profil wysyłki "${sp.name}"? Oferty z tym profilem stracą przypisanie.`)) return;
+        if (!confirm(t('dashboard.confirm_delete_shipping_profile', { name: sp.name }))) return;
         try {
           const res = await authFetch(`/seller/shipping-profiles/${sp.id}`, { method: 'DELETE' });
           const d = await res.json();
           if (!res.ok) {
-            showDashboardBanner(d.message || 'Nie udało się usunąć profilu wysyłki.');
+            showDashboardBanner(d.message || t('dashboard.err_delete_shipping_profile'));
             return;
           }
           loadShippingProfiles();
           loadShippingProfilesForSelect();
         } catch (err) {
-          showDashboardBanner('Nie udało się połączyć z serwerem.');
+          showDashboardBanner(t('common.error_connect'));
         }
       });
     });
   } catch (err) {
-    container.innerHTML = '<p class="dashboard-empty">Błąd ładowania profili wysyłki.</p>';
+    container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_loading_shipping_profiles')}</p>`;
   }
 }
 
@@ -167,7 +157,7 @@ function bindPhotoUpload(fileInputId, hiddenInputId, previewId) {
     clearDashboardBanner();
     const url = await uploadPhoto(file);
     if (!url) {
-      showDashboardBanner('Nie udało się wgrać zdjęcia.');
+      showDashboardBanner(t('dashboard.err_upload_photo'));
       return;
     }
     document.getElementById(hiddenInputId).value = url;
@@ -184,8 +174,8 @@ function renderListingPhotosGrid() {
     .map(
       (url, i) => `
     <div class="dashboard-photo-thumb ${i === 0 ? 'is-primary' : ''}" data-index="${i}">
-      <img src="${url}" alt="Zdjęcie oferty ${i + 1}" />
-      <button type="button" class="dashboard-photo-thumb-remove" data-index="${i}" title="Usuń zdjęcie">&times;</button>
+      <img src="${url}" alt="${t('dashboard.photo_alt', { n: i + 1 })}" />
+      <button type="button" class="dashboard-photo-thumb-remove" data-index="${i}" title="${t('dashboard.remove_photo_title')}">&times;</button>
     </div>
   `
     )
@@ -210,13 +200,13 @@ function bindListingPhotosUpload() {
 
     const remaining = MAX_LISTING_PHOTOS - listingPhotoUrls.length;
     if (files.length > remaining) {
-      showDashboardBanner(`Można dodać jeszcze tylko ${remaining} zdjęć (maks. ${MAX_LISTING_PHOTOS}).`);
+      showDashboardBanner(t('dashboard.photos_remaining_limit', { remaining, max: MAX_LISTING_PHOTOS }));
     }
 
     for (const file of files.slice(0, remaining)) {
       const url = await uploadPhoto(file);
       if (!url) {
-        showDashboardBanner('Nie udało się wgrać jednego ze zdjęć.');
+        showDashboardBanner(t('dashboard.err_upload_one_photo'));
         continue;
       }
       listingPhotoUrls.push(url);
@@ -245,7 +235,7 @@ async function loadMyShop() {
     return null;
   }
   if (!res.ok) {
-    showDashboardBanner('Nie udało się pobrać danych sklepu.');
+    showDashboardBanner(t('dashboard.err_fetch_shop'));
     return null;
   }
   const shop = await res.json();
@@ -258,30 +248,30 @@ async function loadMyShop() {
 
 async function loadStats() {
   const grid = document.getElementById('statsGrid');
-  grid.innerHTML = '<p class="dashboard-empty">Ładowanie...</p>';
+  grid.innerHTML = `<p class="dashboard-empty">${t('common.loading')}</p>`;
   try {
     const res = await authFetch('/seller/stats');
     const stats = await res.json();
     if (!res.ok) {
-      grid.innerHTML = '<p class="dashboard-empty">Nie udało się pobrać statystyk.</p>';
+      grid.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_fetch_stats')}</p>`;
       return;
     }
     grid.innerHTML = `
       <div class="dashboard-stat-tile">
         <p class="dashboard-stat-value">${stats.total_orders}</p>
-        <p class="dashboard-stat-label">Zamówienia</p>
+        <p class="dashboard-stat-label">${t('dashboard.stat_orders')}</p>
       </div>
       <div class="dashboard-stat-tile">
         <p class="dashboard-stat-value">${parseFloat(stats.total_revenue).toFixed(2)} PLN</p>
-        <p class="dashboard-stat-label">Przychód</p>
+        <p class="dashboard-stat-label">${t('dashboard.stat_revenue')}</p>
       </div>
       <div class="dashboard-stat-tile">
         <p class="dashboard-stat-value">${stats.listings_active}/${stats.listings_total}</p>
-        <p class="dashboard-stat-label">Aktywne oferty</p>
+        <p class="dashboard-stat-label">${t('dashboard.stat_active_listings')}</p>
       </div>
     `;
   } catch (err) {
-    grid.innerHTML = '<p class="dashboard-empty">Błąd ładowania statystyk.</p>';
+    grid.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_loading_stats')}</p>`;
   }
 }
 
@@ -306,7 +296,7 @@ function resetListingForm() {
   document.getElementById('listingShippingProfile').value = '';
   listingPhotoUrls = [];
   renderListingPhotosGrid();
-  document.getElementById('listingSubmitBtn').textContent = 'Dodaj ofertę';
+  document.getElementById('listingSubmitBtn').textContent = t('dashboard.add_listing_submit');
   document.getElementById('variantQuantityHint').style.display = 'none';
   resetVariantEditor();
 }
@@ -322,7 +312,7 @@ async function editListing(item) {
   document.getElementById('listingPhotoFile').value = '';
   listingPhotoUrls = item.primary_photo ? [item.primary_photo] : [];
   renderListingPhotosGrid();
-  document.getElementById('listingSubmitBtn').textContent = 'Zapisz zmiany';
+  document.getElementById('listingSubmitBtn').textContent = t('common.save_changes');
   document.getElementById('variantQuantityHint').style.display = item.has_variants ? 'block' : 'none';
   document.getElementById('listingForm').style.display = 'flex';
 
@@ -335,7 +325,7 @@ async function editListing(item) {
       if (item.has_variants) populateVariantEditor(full);
     }
   } catch (err) {
-    if (item.has_variants) showVariantBanner('Nie udało się pobrać wariantów oferty.');
+    if (item.has_variants) showVariantBanner(t('dashboard.err_fetch_variants'));
   }
   if (!item.has_variants) resetVariantEditor();
 }
@@ -359,28 +349,28 @@ async function toggleListingActive(item) {
     });
     const data = await res.json();
     if (!res.ok) {
-      showDashboardBanner(data.message || 'Nie udało się zaktualizować oferty.');
+      showDashboardBanner(data.message || t('dashboard.err_update_listing'));
       return;
     }
     loadListings();
   } catch (err) {
-    showDashboardBanner('Nie udało się połączyć z serwerem.');
+    showDashboardBanner(t('common.error_connect'));
   }
 }
 
 async function deleteListing(item) {
   clearDashboardBanner();
-  if (!confirm(`Usunąć ofertę "${item.title}"? Tej operacji nie można cofnąć.`)) return;
+  if (!confirm(t('dashboard.confirm_delete_listing', { title: item.title }))) return;
   try {
     const res = await authFetch(`/listings/${item.id}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok) {
-      showDashboardBanner(data.message || 'Nie udało się usunąć oferty.');
+      showDashboardBanner(data.message || t('dashboard.err_delete_listing'));
       return;
     }
     loadListings();
   } catch (err) {
-    showDashboardBanner('Nie udało się połączyć z serwerem.');
+    showDashboardBanner(t('common.error_connect'));
   }
 }
 
@@ -400,17 +390,17 @@ function buildListingFilterQuery() {
 
 async function loadListings() {
   const container = document.getElementById('listingsTable');
-  container.innerHTML = '<p class="dashboard-empty">Ładowanie...</p>';
+  container.innerHTML = `<p class="dashboard-empty">${t('common.loading')}</p>`;
   try {
     const filterQuery = buildListingFilterQuery();
     const res = await authFetch(`/seller/listings${filterQuery}`);
     const items = await res.json();
     if (!res.ok) {
-      container.innerHTML = '<p class="dashboard-empty">Nie udało się pobrać ofert.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_fetch_listings')}</p>`;
       return;
     }
     if (items.length === 0) {
-      container.innerHTML = `<p class="dashboard-empty">${filterQuery ? 'Brak ofert pasujących do filtrów.' : 'Nie masz jeszcze żadnych ofert.'}</p>`;
+      container.innerHTML = `<p class="dashboard-empty">${filterQuery ? t('dashboard.no_filtered_listings') : t('dashboard.no_listings_yet')}</p>`;
       return;
     }
 
@@ -421,12 +411,12 @@ async function loadListings() {
         <img src="${item.primary_photo || 'https://picsum.photos/seed/placeholder/100/100'}" alt="${escapeHtml(item.title)}" />
         <div class="dashboard-row-info">
           <p class="dashboard-row-title">${escapeHtml(item.title)}</p>
-          <p class="dashboard-row-meta">${parseFloat(item.price).toFixed(2)} ${item.currency} · ${item.quantity} szt. · ${item.is_active ? 'Aktywna' : 'Nieaktywna'}</p>
+          <p class="dashboard-row-meta">${parseFloat(item.price).toFixed(2)} ${item.currency} · ${item.quantity} ${t('dashboard.units_suffix')} · ${item.is_active ? t('dashboard.status_active_f') : t('dashboard.status_inactive_f')}</p>
         </div>
         <div class="dashboard-row-actions">
-          <button class="dashboard-edit-btn" data-id="${item.id}">Edytuj${item.has_variants ? ' (warianty)' : ''}</button>
-          <button class="dashboard-toggle-btn" data-id="${item.id}">${item.is_active ? 'Wyłącz' : 'Włącz'}</button>
-          <button class="dashboard-delete-btn" data-id="${item.id}">Usuń</button>
+          <button class="dashboard-edit-btn" data-id="${item.id}">${t('common.edit')}${item.has_variants ? t('dashboard.variants_suffix') : ''}</button>
+          <button class="dashboard-toggle-btn" data-id="${item.id}">${item.is_active ? t('dashboard.toggle_disable') : t('dashboard.toggle_enable')}</button>
+          <button class="dashboard-delete-btn" data-id="${item.id}">${t('common.delete')}</button>
         </div>
       </div>
     `
@@ -452,7 +442,7 @@ async function loadListings() {
       });
     });
   } catch (err) {
-    container.innerHTML = '<p class="dashboard-empty">Błąd ładowania ofert.</p>';
+    container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_loading_listings')}</p>`;
   }
 }
 
@@ -477,14 +467,14 @@ function addVariantTypeRow(name = '', optionsStr = '') {
   row.className = 'variant-type-row';
   row.innerHTML = `
     <div class="dashboard-field">
-      <label>Nazwa typu (np. Kolor)</label>
+      <label>${t('dashboard.variant_type_name_label')}</label>
       <input type="text" class="variant-type-name" value="${escapeHtml(name)}" />
     </div>
     <div class="dashboard-field">
-      <label>Wartości (oddzielone przecinkami)</label>
-      <input type="text" class="variant-type-options" value="${escapeHtml(optionsStr)}" placeholder="np. Czerwony, Niebieski, Zielony" />
+      <label>${t('dashboard.variant_type_values_label')}</label>
+      <input type="text" class="variant-type-options" value="${escapeHtml(optionsStr)}" placeholder="${t('dashboard.variant_type_values_placeholder')}" />
     </div>
-    <button type="button" class="dashboard-cancel-btn dashboard-btn-small remove-variant-type-btn">Usuń typ</button>
+    <button type="button" class="dashboard-cancel-btn dashboard-btn-small remove-variant-type-btn">${t('dashboard.remove_variant_type_btn')}</button>
   `;
   row.querySelector('.remove-variant-type-btn').addEventListener('click', () => row.remove());
   container.appendChild(row);
@@ -530,18 +520,18 @@ function readCombosFromTable() {
 function renderComboTable(types) {
   const wrap = document.getElementById('variantCombosWrap');
   if (variantCombos.length === 0) {
-    wrap.innerHTML = '<p class="dashboard-empty">Brak kombinacji. Uzupełnij typy i kliknij "Generuj kombinacje".</p>';
+    wrap.innerHTML = `<p class="dashboard-empty">${t('dashboard.combos_empty_hint')}</p>`;
     return;
   }
   const pricesVary = pricesVaryEnabled();
-  const headerLabels = types.map((t) => escapeHtml(t.name));
+  const headerLabels = types.map((vt) => escapeHtml(vt.name));
   wrap.innerHTML = `
     <table class="variant-combo-table">
       <thead>
         <tr>
           ${headerLabels.map((h) => `<th>${h}</th>`).join('')}
-          ${pricesVary ? '<th>Cena (PLN)</th>' : ''}
-          <th>Ilość</th>
+          ${pricesVary ? `<th>${t('dashboard.profile_price_label')}</th>` : ''}
+          <th>${t('dashboard.quantity_label')}</th>
         </tr>
       </thead>
       <tbody>
@@ -550,7 +540,7 @@ function renderComboTable(types) {
             (c) => `
           <tr data-key="${escapeHtml(comboKey(c.values))}">
             ${c.values.map((v) => `<td>${escapeHtml(v)}</td>`).join('')}
-            ${pricesVary ? `<td><input type="number" step="0.01" min="0" class="variant-combo-price" value="${c.price || ''}" placeholder="bazowa" /></td>` : ''}
+            ${pricesVary ? `<td><input type="number" step="0.01" min="0" class="variant-combo-price" value="${c.price || ''}" placeholder="${t('dashboard.combo_price_placeholder')}" /></td>` : ''}
             <td><input type="number" step="1" min="0" class="variant-combo-qty" value="${c.quantity}" /></td>
           </tr>
         `
@@ -565,7 +555,7 @@ function generateCombos() {
   readCombosFromTable();
   const types = readVariantTypesFromInputs();
   if (types.length === 0) {
-    showVariantBanner('Podaj przynajmniej jeden typ wariacji z wartościami.');
+    showVariantBanner(t('dashboard.err_variant_type_required'));
     return;
   }
   clearVariantBanner();
@@ -639,11 +629,11 @@ function buildVariantsPayload() {
   readCombosFromTable();
   const types = readVariantTypesFromInputs();
   if (types.length === 0) {
-    showVariantBanner('Podaj przynajmniej jeden typ wariacji z wartościami.');
+    showVariantBanner(t('dashboard.err_variant_type_required'));
     return null;
   }
   if (variantCombos.length === 0) {
-    showVariantBanner('Kliknij "Generuj kombinacje" przed zapisaniem.');
+    showVariantBanner(t('dashboard.err_generate_combos_first'));
     return null;
   }
   return {
@@ -666,36 +656,37 @@ async function saveVariantsForListing(listingId, payload) {
   });
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || 'Nie udało się zapisać wariantów.');
+    throw new Error(data.message || t('dashboard.err_save_variants'));
   }
 }
 
 async function loadOrders() {
   const container = document.getElementById('ordersTable');
-  container.innerHTML = '<p class="dashboard-empty">Ładowanie...</p>';
+  container.innerHTML = `<p class="dashboard-empty">${t('common.loading')}</p>`;
   try {
     const res = await authFetch('/seller/orders');
     const orders = await res.json();
     if (!res.ok) {
-      container.innerHTML = '<p class="dashboard-empty">Nie udało się pobrać zamówień.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_fetch_orders')}</p>`;
       return;
     }
     if (orders.length === 0) {
-      container.innerHTML = '<p class="dashboard-empty">Brak zamówień.</p>';
+      container.innerHTML = `<p class="dashboard-empty">${t('dashboard.no_orders')}</p>`;
       return;
     }
 
+    const orderStatusValues = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
     container.innerHTML = orders
       .map(
         (o) => `
       <div class="dashboard-row" data-id="${o.id}">
         <div class="dashboard-row-info">
-          <p class="dashboard-row-title">Zamówienie #${o.id.slice(0, 8)}</p>
-          <p class="dashboard-row-meta">Kupujący: ${escapeHtml(o.buyer_username || '—')} · ${parseFloat(o.total_amount).toFixed(2)} ${o.currency}${parseFloat(o.shipping_amount) > 0 ? ` (w tym wysyłka ${parseFloat(o.shipping_amount).toFixed(2)} ${o.currency})` : ''} · ${new Date(o.created_at).toLocaleDateString('pl-PL')} · Płatność: ${o.payment_status === 'completed' ? 'opłacone' : o.payment_status === 'failed' ? 'odrzucona' : 'oczekuje'}</p>
+          <p class="dashboard-row-title">${t('dashboard.order_number', { id: o.id.slice(0, 8) })}</p>
+          <p class="dashboard-row-meta">${t('dashboard.buyer_label', { name: escapeHtml(o.buyer_username || '—') })} · ${parseFloat(o.total_amount).toFixed(2)} ${o.currency}${parseFloat(o.shipping_amount) > 0 ? t('dashboard.shipping_included_paren', { amount: parseFloat(o.shipping_amount).toFixed(2) + ' ' + o.currency }) : ''} · ${new Date(o.created_at).toLocaleDateString('pl-PL')} · ${t('dashboard.payment_label', { status: t('payment_status_short.' + (o.payment_status === 'completed' ? 'completed' : o.payment_status === 'failed' ? 'failed' : 'pending')) })}</p>
         </div>
         <select class="dashboard-order-status" data-id="${o.id}">
-          ${Object.entries(orderStatusLabels)
-            .map(([value, label]) => `<option value="${value}" ${value === o.status ? 'selected' : ''}>${label}</option>`)
+          ${orderStatusValues
+            .map((value) => `<option value="${value}" ${value === o.status ? 'selected' : ''}>${t('order_status.' + value)}</option>`)
             .join('')}
         </select>
       </div>
@@ -714,15 +705,15 @@ async function loadOrders() {
           });
           const data = await res.json();
           if (!res.ok) {
-            showDashboardBanner(data.message || 'Nie udało się zaktualizować statusu.');
+            showDashboardBanner(data.message || t('dashboard.err_update_status'));
           }
         } catch (err) {
-          showDashboardBanner('Nie udało się połączyć z serwerem.');
+          showDashboardBanner(t('common.error_connect'));
         }
       });
     });
   } catch (err) {
-    container.innerHTML = '<p class="dashboard-empty">Błąd ładowania zamówień.</p>';
+    container.innerHTML = `<p class="dashboard-empty">${t('dashboard.err_loading_orders')}</p>`;
   }
 }
 
@@ -759,7 +750,7 @@ function bindEvents() {
       });
       const data = await res.json();
       if (!res.ok) {
-        showDashboardBanner(data.message || 'Nie udało się założyć sklepu.');
+        showDashboardBanner(data.message || t('dashboard.err_create_shop'));
         return;
       }
 
@@ -774,7 +765,7 @@ function bindEvents() {
       fillEditShopForm(data);
       switchTab('shop');
     } catch (err) {
-      showDashboardBanner('Nie udało się połączyć z serwerem.');
+      showDashboardBanner(t('common.error_connect'));
     }
   });
 
@@ -795,12 +786,12 @@ function bindEvents() {
       });
       const data = await res.json();
       if (!res.ok) {
-        showDashboardBanner(data.message || 'Nie udało się zapisać zmian.');
+        showDashboardBanner(data.message || t('dashboard.err_save_shop'));
         return;
       }
-      showDashboardBanner('Zapisano zmiany.', 'success');
+      showDashboardBanner(t('dashboard.saved_changes'), 'success');
     } catch (err) {
-      showDashboardBanner('Nie udało się połączyć z serwerem.');
+      showDashboardBanner(t('common.error_connect'));
     }
   });
 
@@ -843,7 +834,7 @@ function bindEvents() {
       });
       const data = await res.json();
       if (!res.ok) {
-        showDashboardBanner(data.message || 'Nie udało się zapisać profilu wysyłki.');
+        showDashboardBanner(data.message || t('dashboard.err_save_shipping_profile'));
         return;
       }
       document.getElementById('shippingProfileForm').style.display = 'none';
@@ -851,7 +842,7 @@ function bindEvents() {
       loadShippingProfiles();
       loadShippingProfilesForSelect();
     } catch (err) {
-      showDashboardBanner('Nie udało się połączyć z serwerem.');
+      showDashboardBanner(t('common.error_connect'));
     }
   });
 
@@ -899,7 +890,7 @@ function bindEvents() {
       });
       const data = await res.json();
       if (!res.ok) {
-        showDashboardBanner(data.message || 'Nie udało się zapisać oferty.');
+        showDashboardBanner(data.message || t('dashboard.err_save_listing'));
         return;
       }
 
@@ -908,7 +899,7 @@ function bindEvents() {
         try {
           await saveVariantsForListing(data.id, variantsPayload);
         } catch (err) {
-          showDashboardBanner(err.message || 'Oferta zapisana, ale nie udało się zapisać wariantów.');
+          showDashboardBanner(err.message || t('dashboard.listing_saved_variants_failed'));
           loadListings();
           return;
         }
@@ -918,9 +909,16 @@ function bindEvents() {
       resetListingForm();
       loadListings();
     } catch (err) {
-      showDashboardBanner('Nie udało się połączyć z serwerem.');
+      showDashboardBanner(t('common.error_connect'));
     }
   });
+}
+
+function onPageLocaleChange() {
+  loadStats();
+  loadListings();
+  loadOrders();
+  loadShippingProfiles();
 }
 
 async function init() {

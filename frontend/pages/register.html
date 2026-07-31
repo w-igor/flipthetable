@@ -9,60 +9,62 @@
 <body>
   <div class="auth-topbar">
     <a href="../index.html" class="auth-logo">Flip<span>TheTable</span></a>
+    <select id="langSwitcher" class="lang-switcher"></select>
   </div>
 
   <div class="auth-wrapper">
     <div class="auth-card">
-      <h1>Stwórz konto</h1>
-      <p class="auth-subtitle">Dołącz i zacznij kupować lub sprzedawać</p>
+      <h1 data-i18n="auth.register_title">Stwórz konto</h1>
+      <p class="auth-subtitle" data-i18n="auth.register_subtitle">Dołącz i zacznij kupować lub sprzedawać</p>
 
       <div class="auth-banner error" id="errorBanner"></div>
       <div class="auth-banner success" id="successBanner"></div>
 
       <form id="registerForm" novalidate>
         <div class="auth-field">
-          <label for="username">Nazwa użytkownika</label>
+          <label for="username" data-i18n="auth.username_label">Nazwa użytkownika</label>
           <input type="text" id="username" name="username" autocomplete="username" required />
           <div class="auth-field-error" id="usernameError"></div>
         </div>
 
         <div class="auth-field">
-          <label for="email">Adres e-mail</label>
+          <label for="email" data-i18n="auth.email_label">Adres e-mail</label>
           <input type="email" id="email" name="email" autocomplete="email" required />
           <div class="auth-field-error" id="emailError"></div>
         </div>
 
         <div class="auth-field auth-password-row">
-          <label for="password">Hasło</label>
+          <label for="password" data-i18n="auth.password_label">Hasło</label>
           <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required />
-          <button type="button" class="auth-toggle-password" data-target="password">Pokaż</button>
+          <button type="button" class="auth-toggle-password" data-target="password" data-i18n="auth.show_password">Pokaż</button>
           <div class="auth-field-error" id="passwordError"></div>
         </div>
 
         <div class="auth-field auth-password-row">
-          <label for="confirmPassword">Powtórz hasło</label>
+          <label for="confirmPassword" data-i18n="auth.confirm_password_label">Powtórz hasło</label>
           <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required />
-          <button type="button" class="auth-toggle-password" data-target="confirmPassword">Pokaż</button>
+          <button type="button" class="auth-toggle-password" data-target="confirmPassword" data-i18n="auth.show_password">Pokaż</button>
           <div class="auth-field-error" id="confirmPasswordError"></div>
         </div>
 
         <label class="auth-remember-row">
           <input type="checkbox" id="isSeller" name="isSeller" />
-          Chcę też sprzedawać na FlipTheTable
+          <span data-i18n="auth.want_to_sell">Chcę też sprzedawać na FlipTheTable</span>
         </label>
-        <p class="auth-seller-note">Możesz to później zmienić w ustawieniach profilu.</p>
+        <p class="auth-seller-note" data-i18n="auth.seller_note">Możesz to później zmienić w ustawieniach profilu.</p>
 
-        <button type="submit" class="auth-submit" id="submitBtn">Zarejestruj się</button>
+        <button type="submit" class="auth-submit" id="submitBtn" data-i18n="auth.register_link">Zarejestruj się</button>
       </form>
 
-      <div class="auth-divider">lub</div>
+      <div class="auth-divider" data-i18n="auth.or_divider">lub</div>
 
       <p class="auth-footer">
-        Masz już konto? <a href="login.html">Zaloguj się</a>
+        <span data-i18n="auth.have_account">Masz już konto?</span> <a href="login.html" data-i18n="auth.login_title">Zaloguj się</a>
       </p>
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/auth.js"></script>
   <script>
     initAuthPage('register');

@@ -11,12 +11,13 @@
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <select id="langSwitcher" class="lang-switcher"></select>
       <span id="authActions"></span>
     </div>
   </header>
 
   <div class="messages-layout">
-    <h1 class="messages-title">Wiadomości</h1>
+    <h1 class="messages-title" data-i18n="messages.title">Wiadomości</h1>
     <div class="messages-panes">
       <div class="messages-conversations">
         <div id="conversationsList"></div>
@@ -24,16 +25,17 @@
       <div class="messages-thread">
         <div id="threadHeader" class="messages-thread-header" style="display:none;"></div>
         <div id="threadBody" class="messages-thread-body">
-          <p class="messages-empty">Wybierz rozmowę z listy.</p>
+          <p class="messages-empty" data-i18n="messages.no_conversation_selected">Wybierz rozmowę z listy.</p>
         </div>
         <form id="messageForm" class="messages-form" style="display:none;">
-          <textarea id="messageInput" rows="2" placeholder="Napisz wiadomość..." required></textarea>
-          <button type="submit">Wyślij</button>
+          <textarea id="messageInput" rows="2" placeholder="Napisz wiadomość..." data-i18n-placeholder="messages.input_placeholder" required></textarea>
+          <button type="submit" data-i18n="messages.send_btn">Wyślij</button>
         </form>
       </div>
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>

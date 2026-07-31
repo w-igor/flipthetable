@@ -42,7 +42,7 @@ function togglePasswordVisibility() {
       const target = document.getElementById(btn.dataset.target);
       const isHidden = target.type === 'password';
       target.type = isHidden ? 'text' : 'password';
-      btn.textContent = isHidden ? 'Ukryj' : 'Pokaż';
+      btn.textContent = isHidden ? t('auth.hide_password') : t('auth.show_password');
     });
   });
 }
@@ -63,17 +63,17 @@ function initLoginPage() {
 
     let hasError = false;
     if (!isValidEmail(email)) {
-      setFieldError('email', 'Podaj prawidłowy adres e-mail');
+      setFieldError('email', t('auth.err_invalid_email'));
       hasError = true;
     }
     if (!password) {
-      setFieldError('password', 'Podaj hasło');
+      setFieldError('password', t('auth.err_password_required'));
       hasError = true;
     }
     if (hasError) return;
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Logowanie...';
+    submitBtn.textContent = t('auth.logging_in');
 
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -84,21 +84,21 @@ function initLoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        showBanner('error', data.message || 'Nieprawidłowy e-mail lub hasło');
+        showBanner('error', data.message || t('auth.err_invalid_credentials'));
         return;
       }
 
       storeSession(data, remember);
-      showBanner('success', 'Zalogowano pomyślnie. Przekierowywanie...');
+      showBanner('success', t('auth.success_login'));
       const redirect = new URLSearchParams(window.location.search).get('redirect');
       setTimeout(() => {
         window.location.href = redirect ? redirect : '../index.html';
       }, 800);
     } catch (err) {
-      showBanner('error', 'Nie udało się połączyć z serwerem. Spróbuj ponownie.');
+      showBanner('error', t('auth.err_connect_retry'));
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Zaloguj się';
+      submitBtn.textContent = t('auth.login_title');
     }
   });
 }
@@ -120,25 +120,25 @@ function initRegisterPage() {
 
     let hasError = false;
     if (username.length < 3) {
-      setFieldError('username', 'Nazwa użytkownika musi mieć min. 3 znaki');
+      setFieldError('username', t('auth.err_username_length'));
       hasError = true;
     }
     if (!isValidEmail(email)) {
-      setFieldError('email', 'Podaj prawidłowy adres e-mail');
+      setFieldError('email', t('auth.err_invalid_email'));
       hasError = true;
     }
     if (password.length < 8) {
-      setFieldError('password', 'Hasło musi mieć min. 8 znaków');
+      setFieldError('password', t('auth.err_password_length'));
       hasError = true;
     }
     if (confirmPassword !== password) {
-      setFieldError('confirmPassword', 'Hasła nie są identyczne');
+      setFieldError('confirmPassword', t('auth.err_password_mismatch'));
       hasError = true;
     }
     if (hasError) return;
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Tworzenie konta...';
+    submitBtn.textContent = t('auth.creating_account');
 
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
@@ -149,20 +149,20 @@ function initRegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        showBanner('error', data.message || 'Nie udało się utworzyć konta');
+        showBanner('error', data.message || t('auth.err_register_failed'));
         return;
       }
 
       storeSession(data, true);
-      showBanner('success', 'Konto utworzone. Przekierowywanie...');
+      showBanner('success', t('auth.success_register'));
       setTimeout(() => {
         window.location.href = '../index.html';
       }, 800);
     } catch (err) {
-      showBanner('error', 'Nie udało się połączyć z serwerem. Spróbuj ponownie.');
+      showBanner('error', t('auth.err_connect_retry'));
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Zarejestruj się';
+      submitBtn.textContent = t('auth.register_link');
     }
   });
 }

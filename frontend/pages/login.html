@@ -9,46 +9,48 @@
 <body>
   <div class="auth-topbar">
     <a href="../index.html" class="auth-logo">Flip<span>TheTable</span></a>
+    <select id="langSwitcher" class="lang-switcher"></select>
   </div>
 
   <div class="auth-wrapper">
     <div class="auth-card">
-      <h1>Zaloguj się</h1>
-      <p class="auth-subtitle">Wróć do swoich zakupów i sklepów</p>
+      <h1 data-i18n="auth.login_title">Zaloguj się</h1>
+      <p class="auth-subtitle" data-i18n="auth.login_subtitle">Wróć do swoich zakupów i sklepów</p>
 
       <div class="auth-banner error" id="errorBanner"></div>
       <div class="auth-banner success" id="successBanner"></div>
 
       <form id="loginForm" novalidate>
         <div class="auth-field">
-          <label for="email">Adres e-mail</label>
+          <label for="email" data-i18n="auth.email_label">Adres e-mail</label>
           <input type="email" id="email" name="email" autocomplete="email" required />
           <div class="auth-field-error" id="emailError"></div>
         </div>
 
         <div class="auth-field auth-password-row">
-          <label for="password">Hasło</label>
+          <label for="password" data-i18n="auth.password_label">Hasło</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required />
-          <button type="button" class="auth-toggle-password" data-target="password">Pokaż</button>
+          <button type="button" class="auth-toggle-password" data-target="password" data-i18n="auth.show_password">Pokaż</button>
           <div class="auth-field-error" id="passwordError"></div>
         </div>
 
         <label class="auth-remember-row">
           <input type="checkbox" id="remember" name="remember" />
-          Zapamiętaj mnie na 30 dni
+          <span data-i18n="auth.remember_me">Zapamiętaj mnie na 30 dni</span>
         </label>
 
-        <button type="submit" class="auth-submit" id="submitBtn">Zaloguj się</button>
+        <button type="submit" class="auth-submit" id="submitBtn" data-i18n="auth.login_title">Zaloguj się</button>
       </form>
 
-      <div class="auth-divider">lub</div>
+      <div class="auth-divider" data-i18n="auth.or_divider">lub</div>
 
       <p class="auth-footer">
-        Nie masz konta? <a href="register.html">Zarejestruj się</a>
+        <span data-i18n="auth.no_account">Nie masz konta?</span> <a href="register.html" data-i18n="auth.register_link">Zarejestruj się</a>
       </p>
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/auth.js"></script>
   <script>
     initAuthPage('login');

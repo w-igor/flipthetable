@@ -208,55 +208,57 @@
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <select id="langSwitcher" class="lang-switcher"></select>
       <span id="authActions">
-        <a href="login.html" class="nav-icon-link" title="Zaloguj się" aria-label="Zaloguj się"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg></a>
-        <a href="register.html" class="nav-icon-link" title="Zarejestruj się" aria-label="Zarejestruj się"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg></a>
+        <a href="login.html" class="nav-icon-link" title="Zaloguj się" aria-label="Zaloguj się" data-i18n-title="nav.login" data-i18n-aria-label="nav.login"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg></a>
+        <a href="register.html" class="nav-icon-link" title="Zarejestruj się" aria-label="Zarejestruj się" data-i18n-title="nav.register" data-i18n-aria-label="nav.register"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg></a>
       </span>
-      <button id="cartToggleBtn" class="cart-icon-btn" title="Koszyk" aria-label="Koszyk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg><span id="cartCount" class="cart-count-badge">0</span></button>
+      <button id="cartToggleBtn" class="cart-icon-btn" title="Koszyk" aria-label="Koszyk" data-i18n-title="nav.cart" data-i18n-aria-label="nav.cart"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg><span id="cartCount" class="cart-count-badge">0</span></button>
     </div>
   </header>
 
   <div id="cartOverlay" class="cart-overlay"></div>
   <div id="cartDrawer" class="cart-drawer">
     <div class="cart-drawer-header">
-      <h3>Koszyk</h3>
+      <h3 data-i18n="nav.cart">Koszyk</h3>
       <button id="closeCartBtn">✕</button>
     </div>
     <div id="cartItemsList" class="cart-items-list"></div>
     <div class="cart-drawer-footer">
       <div class="cart-total-row">
-        <span>Razem:</span>
+        <span data-i18n="cart.total">Razem:</span>
         <span id="cartTotalAmount">0.00 PLN</span>
       </div>
-      <a href="checkout.html" class="cart-checkout-btn">Przejdź do kasy</a>
+      <a href="checkout.html" class="cart-checkout-btn" data-i18n="cart.checkout_btn">Przejdź do kasy</a>
     </div>
   </div>
 
-  <a href="shop.html" class="back-link">‹ Wróć do katalogu</a>
+  <a href="shop.html" class="back-link" data-i18n="listing.back_link">‹ Wróć do katalogu</a>
 
   <div id="listingContainer" class="listing-detail"></div>
 
   <div class="listing-reviews">
-    <h2>Opinie</h2>
+    <h2 data-i18n="listing.reviews_heading">Opinie</h2>
     <div id="reviewFormWrap" class="review-form-wrap" style="display:none;">
       <form id="reviewForm">
-        <label for="reviewRating">Ocena</label>
+        <label for="reviewRating" data-i18n="listing.rating_label">Ocena</label>
         <select id="reviewRating">
-          <option value="5">5 - świetnie</option>
-          <option value="4">4 - dobrze</option>
-          <option value="3">3 - średnio</option>
-          <option value="2">2 - słabo</option>
-          <option value="1">1 - źle</option>
+          <option value="5" data-i18n="listing.rating_5">5 - świetnie</option>
+          <option value="4" data-i18n="listing.rating_4">4 - dobrze</option>
+          <option value="3" data-i18n="listing.rating_3">3 - średnio</option>
+          <option value="2" data-i18n="listing.rating_2">2 - słabo</option>
+          <option value="1" data-i18n="listing.rating_1">1 - źle</option>
         </select>
-        <label for="reviewComment">Komentarz (opcjonalnie)</label>
+        <label for="reviewComment" data-i18n="listing.comment_label">Komentarz (opcjonalnie)</label>
         <textarea id="reviewComment" rows="3"></textarea>
-        <button type="submit" id="reviewSubmitBtn">Dodaj opinię</button>
+        <button type="submit" id="reviewSubmitBtn" data-i18n="listing.submit_review">Dodaj opinię</button>
         <p class="review-form-error" id="reviewFormError"></p>
       </form>
     </div>
     <div id="reviewsList" class="reviews-list"></div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>
@@ -269,14 +271,14 @@
       const container = document.getElementById('listingContainer');
 
       if (!id) {
-        container.innerHTML = '<p>Brak ID produktu.</p>';
+        container.innerHTML = `<p>${t('listing.no_product_id')}</p>`;
         return;
       }
 
       try {
         const res = await fetch(`${API_URL}/listings/${id}`);
         if (!res.ok) {
-          container.innerHTML = '<p>Produkt nie znaleziony.</p>';
+          container.innerHTML = `<p>${t('listing.not_found')}</p>`;
           return;
         }
         const item = await res.json();
@@ -292,22 +294,22 @@
             <img id="mainListingImg" class="listing-detail-main-img" src="${photos[0]}" alt="${escapeHtml(item.title)}" />
             ${photos.length > 1 ? `
               <div class="listing-detail-thumbs" id="listingThumbs">
-                ${photos.map((url, i) => `<img src="${url}" data-index="${i}" class="${i === 0 ? 'active' : ''}" alt="${escapeHtml(item.title)} - zdjęcie ${i + 1}" />`).join('')}
+                ${photos.map((url, i) => `<img src="${url}" data-index="${i}" class="${i === 0 ? 'active' : ''}" alt="${escapeHtml(item.title)} ${i + 1}" />`).join('')}
               </div>
             ` : ''}
           </div>
           <div class="listing-detail-info">
             <h1>${escapeHtml(item.title)}</h1>
-            <p class="listing-detail-shop">Sprzedawca: <a href="shop-profile.html?id=${item.shop_id}">${escapeHtml(item.shop_name)}</a></p>
+            <p class="listing-detail-shop">${t('listing.seller_label')} <a href="shop-profile.html?id=${item.shop_id}">${escapeHtml(item.shop_name)}</a></p>
             <p class="listing-detail-price" id="listingPrice">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
             <p class="listing-detail-desc">${escapeHtml(item.description || '')}</p>
-            ${item.shipping ? `<p class="listing-detail-shipping">🚚 Wysyłka: ${parseFloat(item.shipping.price).toFixed(2)} PLN · ${item.shipping.min_days === item.shipping.max_days ? `${item.shipping.min_days} dni` : `${item.shipping.min_days}-${item.shipping.max_days} dni`}</p>` : ''}
-            ${hasVariants ? '<div id="variantPicker"></div>' : `<p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>`}
+            ${item.shipping ? `<p class="listing-detail-shipping">${t('listing.shipping_label')} ${parseFloat(item.shipping.price).toFixed(2)} PLN · ${item.shipping.min_days === item.shipping.max_days ? t('common.days_single', { n: item.shipping.min_days }) : t('common.days_range', { min: item.shipping.min_days, max: item.shipping.max_days })}</p>` : ''}
+            ${hasVariants ? '<div id="variantPicker"></div>' : `<p>${item.quantity > 0 ? t('listing.available_units', { n: item.quantity }) : t('shop.out_of_stock')}</p>`}
             <div class="listing-detail-add-row" id="addRow" style="display:${hasVariants ? 'none' : (item.quantity > 0 ? 'flex' : 'none')};">
               <input type="number" id="qtyInput" class="listing-detail-qty" value="1" min="1" max="${item.quantity || 1}" />
-              <button id="addToCartBtn" class="listing-detail-add-btn" ${hasVariants ? 'disabled' : ''}>Dodaj do koszyka</button>
+              <button id="addToCartBtn" class="listing-detail-add-btn" ${hasVariants ? 'disabled' : ''}>${t('shop.add_to_cart')}</button>
             </div>
-            <button id="favToggleBtn" class="listing-detail-fav-btn" type="button">♡ Dodaj do ulubionych</button>
+            <button id="favToggleBtn" class="listing-detail-fav-btn" type="button">${t('listing.fav_add')}</button>
           </div>
         `;
 
@@ -336,8 +338,8 @@
             const maxQty = hasVariants ? (selectedSku ? selectedSku.quantity : 0) : item.quantity;
             const qty = Math.max(1, Math.min(maxQty, parseInt(document.getElementById('qtyInput').value, 10) || 1));
             addToCart(item.id, qty, hasVariants ? selectedSku.id : null);
-            addBtn.textContent = 'Dodano ✓';
-            setTimeout(() => { addBtn.textContent = 'Dodaj do koszyka'; }, 1200);
+            addBtn.textContent = t('shop.added_check');
+            setTimeout(() => { addBtn.textContent = t('shop.add_to_cart'); }, 1200);
           });
         }
 
@@ -345,7 +347,7 @@
         loadReviews(item.id);
         setupReviewForm(item.id);
       } catch (err) {
-        container.innerHTML = '<p>Błąd ładowania produktu.</p>';
+        container.innerHTML = `<p>${t('listing.error_loading')}</p>`;
       }
     }
 
@@ -369,7 +371,7 @@
         <div class="listing-variant-row">
           <label for="variantSelect${i}">${escapeHtml(t.name)}</label>
           <select id="variantSelect${i}">
-            <option value="">Wybierz...</option>
+            <option value="">${window.t('listing.variant_choose')}</option>
             ${t.options.map((o) => `<option value="${o.id}">${escapeHtml(o.value)}</option>`).join('')}
           </select>
         </div>
@@ -395,7 +397,7 @@
 
         const sku = findMatchingSku(item, selectedIds);
         if (!sku || sku.quantity === 0) {
-          stockInfo.textContent = 'Ten wariant jest niedostępny.';
+          stockInfo.textContent = t('listing.variant_unavailable');
           stockInfo.className = 'listing-variant-stock warn';
           addRow.style.display = 'none';
           onSelectionChange(null);
@@ -404,7 +406,7 @@
 
         const effectivePrice = sku.price !== undefined && sku.price !== null ? parseFloat(sku.price) : parseFloat(item.price);
         priceEl.textContent = `${effectivePrice.toFixed(2)} ${item.currency}`;
-        stockInfo.textContent = `Dostępnych sztuk: ${sku.quantity}`;
+        stockInfo.textContent = t('listing.available_units', { n: sku.quantity });
         stockInfo.className = 'listing-variant-stock';
         addRow.style.display = 'flex';
         qtyInput.max = sku.quantity;
@@ -441,7 +443,7 @@
 
       const render = () => {
         btn.classList.toggle('active', isFav);
-        btn.textContent = isFav ? '♥ W ulubionych' : '♡ Dodaj do ulubionych';
+        btn.textContent = isFav ? t('listing.fav_added') : t('listing.fav_add');
       };
       render();
 
@@ -468,7 +470,7 @@
     function renderReviews(reviews) {
       const container = document.getElementById('reviewsList');
       if (reviews.length === 0) {
-        container.innerHTML = '<p class="reviews-empty">Brak opinii. Bądź pierwszy!</p>';
+        container.innerHTML = `<p class="reviews-empty">${t('listing.reviews_empty')}</p>`;
         return;
       }
       container.innerHTML = reviews.map((r) => `
@@ -530,7 +532,7 @@
           });
           const data = await res.json();
           if (!res.ok) {
-            document.getElementById('reviewFormError').textContent = data.message || 'Nie udało się dodać opinii.';
+            document.getElementById('reviewFormError').textContent = data.message || t('listing.review_error_generic');
             return;
           }
           formWrap.style.display = 'none';

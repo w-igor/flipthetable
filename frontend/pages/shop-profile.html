@@ -12,27 +12,28 @@
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <select id="langSwitcher" class="lang-switcher"></select>
       <span id="authActions">
-        <a href="login.html" class="nav-icon-link" title="Zaloguj się" aria-label="Zaloguj się"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg></a>
-        <a href="register.html" class="nav-icon-link" title="Zarejestruj się" aria-label="Zarejestruj się"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg></a>
+        <a href="login.html" class="nav-icon-link" title="Zaloguj się" aria-label="Zaloguj się" data-i18n-title="nav.login" data-i18n-aria-label="nav.login"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /></svg></a>
+        <a href="register.html" class="nav-icon-link" title="Zarejestruj się" aria-label="Zarejestruj się" data-i18n-title="nav.register" data-i18n-aria-label="nav.register"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg></a>
       </span>
-      <button id="cartToggleBtn" class="cart-icon-btn" title="Koszyk" aria-label="Koszyk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg><span id="cartCount" class="cart-count-badge">0</span></button>
+      <button id="cartToggleBtn" class="cart-icon-btn" title="Koszyk" aria-label="Koszyk" data-i18n-title="nav.cart" data-i18n-aria-label="nav.cart"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg><span id="cartCount" class="cart-count-badge">0</span></button>
     </div>
   </header>
 
   <div id="cartOverlay" class="cart-overlay"></div>
   <div id="cartDrawer" class="cart-drawer">
     <div class="cart-drawer-header">
-      <h3>Koszyk</h3>
+      <h3 data-i18n="nav.cart">Koszyk</h3>
       <button id="closeCartBtn">✕</button>
     </div>
     <div id="cartItemsList" class="cart-items-list"></div>
     <div class="cart-drawer-footer">
       <div class="cart-total-row">
-        <span>Razem:</span>
+        <span data-i18n="cart.total">Razem:</span>
         <span id="cartTotalAmount">0.00 PLN</span>
       </div>
-      <a href="checkout.html" class="cart-checkout-btn">Przejdź do kasy</a>
+      <a href="checkout.html" class="cart-checkout-btn" data-i18n="cart.checkout_btn">Przejdź do kasy</a>
     </div>
   </div>
 
@@ -41,11 +42,12 @@
   <div class="shop-profile-layout">
     <div id="resultCount" class="shop-result-count"></div>
     <div id="listingGrid" class="listing-grid"></div>
-    <div id="emptyState" class="shop-empty-state" style="display:none;">
+    <div id="emptyState" class="shop-empty-state" style="display:none;" data-i18n="shop_profile.empty_listings">
       Ten sklep nie ma jeszcze żadnych ofert.
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>

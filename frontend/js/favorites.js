@@ -27,7 +27,7 @@ function renderFavorites(items) {
       const img = item.primary_photo || 'https://picsum.photos/seed/placeholder/600/600';
       return `
         <a class="listing-card" href="listing.html?id=${item.id}">
-          <button class="listing-card-fav-btn active" type="button" data-id="${item.id}" title="Usuń z ulubionych">♥</button>
+          <button class="listing-card-fav-btn active" type="button" data-id="${item.id}" title="${t('favorites.remove_title')}">♥</button>
           <img src="${img}" alt="${escapeHtml(item.title)}" loading="lazy" />
           <div class="listing-card-body">
             <p class="listing-card-shop">${escapeHtml(item.shop_name)}</p>
@@ -56,18 +56,22 @@ function renderFavorites(items) {
 
 async function loadFavorites() {
   const grid = document.getElementById('favoritesGrid');
-  grid.innerHTML = '<p class="orders-empty">Ładowanie...</p>';
+  grid.innerHTML = `<p class="orders-empty">${t('common.loading')}</p>`;
   try {
     const res = await authFetch('/favorites');
     const items = await res.json();
     if (!res.ok) {
-      grid.innerHTML = '<p class="orders-empty">Nie udało się pobrać ulubionych.</p>';
+      grid.innerHTML = `<p class="orders-empty">${t('favorites.err_fetch')}</p>`;
       return;
     }
     renderFavorites(items);
   } catch (err) {
-    grid.innerHTML = '<p class="orders-empty">Błąd ładowania ulubionych.</p>';
+    grid.innerHTML = `<p class="orders-empty">${t('favorites.err_loading')}</p>`;
   }
+}
+
+function onPageLocaleChange() {
+  loadFavorites();
 }
 
 function init() {

@@ -11,84 +11,85 @@
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <select id="langSwitcher" class="lang-switcher"></select>
       <span id="authActions"></span>
     </div>
   </header>
 
   <div class="dashboard-layout">
-    <h1 class="dashboard-title">Panel sprzedawcy</h1>
+    <h1 class="dashboard-title" data-i18n="dashboard.title">Panel sprzedawcy</h1>
     <div id="dashboardBanner" class="dashboard-banner"></div>
 
     <div id="noShopState" class="dashboard-card" style="display:none;">
-      <h2>Załóż swój sklep</h2>
-      <p class="dashboard-hint">Wypełnij podstawowe informacje, aby zacząć sprzedawać na FlipTheTable.</p>
+      <h2 data-i18n="dashboard.no_shop_heading">Załóż swój sklep</h2>
+      <p class="dashboard-hint" data-i18n="dashboard.no_shop_hint">Wypełnij podstawowe informacje, aby zacząć sprzedawać na FlipTheTable.</p>
       <form id="createShopForm" class="dashboard-form">
         <div class="dashboard-field">
-          <label for="shopName">Nazwa sklepu</label>
+          <label for="shopName" data-i18n="dashboard.shop_name_label">Nazwa sklepu</label>
           <input type="text" id="shopName" required />
         </div>
         <div class="dashboard-field">
-          <label for="shopDescription">Opis sklepu</label>
+          <label for="shopDescription" data-i18n="dashboard.shop_desc_label">Opis sklepu</label>
           <textarea id="shopDescription" rows="3"></textarea>
         </div>
         <div class="dashboard-field">
-          <label for="shopAvatarFile">Logo (opcjonalnie)</label>
+          <label for="shopAvatarFile" data-i18n="dashboard.logo_optional_label">Logo (opcjonalnie)</label>
           <input type="file" id="shopAvatarFile" accept="image/png,image/jpeg,image/webp,image/gif" />
           <input type="hidden" id="shopAvatarUrl" />
           <img id="shopAvatarPreview" class="dashboard-photo-preview" style="display:none;" />
         </div>
         <div class="dashboard-field">
-          <label for="shopBannerFile">Baner (opcjonalnie)</label>
+          <label for="shopBannerFile" data-i18n="dashboard.banner_optional_label">Baner (opcjonalnie)</label>
           <input type="file" id="shopBannerFile" accept="image/png,image/jpeg,image/webp,image/gif" />
           <input type="hidden" id="shopBannerUrl" />
           <img id="shopBannerPreview" class="dashboard-photo-preview" style="display:none;" />
         </div>
-        <button type="submit" class="dashboard-submit-btn">Załóż sklep</button>
+        <button type="submit" class="dashboard-submit-btn" data-i18n="dashboard.create_shop_btn">Załóż sklep</button>
       </form>
     </div>
 
     <div id="dashboardMain" class="dashboard-shell" style="display:none;">
       <aside class="dashboard-sidebar">
         <nav class="dashboard-sidebar-nav">
-          <button class="dashboard-tab active" data-tab="shop">Dashboard</button>
-          <button class="dashboard-tab" data-tab="orders">Zamówienia</button>
-          <button class="dashboard-tab" data-tab="listings">Oferty</button>
-          <button class="dashboard-tab" data-tab="shipping">Wysyłka</button>
+          <button class="dashboard-tab active" data-tab="shop" data-i18n="dashboard.tab_dashboard">Dashboard</button>
+          <button class="dashboard-tab" data-tab="orders" data-i18n="dashboard.tab_orders">Zamówienia</button>
+          <button class="dashboard-tab" data-tab="listings" data-i18n="dashboard.tab_listings">Oferty</button>
+          <button class="dashboard-tab" data-tab="shipping" data-i18n="dashboard.tab_shipping">Wysyłka</button>
         </nav>
       </aside>
 
       <div class="dashboard-main">
       <section id="tab-shop" class="dashboard-tab-panel">
         <div class="dashboard-card">
-          <h2>Statystyki sklepu</h2>
+          <h2 data-i18n="dashboard.shop_stats_heading">Statystyki sklepu</h2>
           <div class="dashboard-stats-grid" id="statsGrid"></div>
         </div>
 
         <div class="dashboard-card">
-          <h2>Profil sklepu</h2>
+          <h2 data-i18n="dashboard.shop_profile_heading">Profil sklepu</h2>
           <form id="editShopForm" class="dashboard-form">
             <div class="dashboard-field">
-              <label for="editShopName">Nazwa sklepu</label>
+              <label for="editShopName" data-i18n="dashboard.shop_name_label">Nazwa sklepu</label>
               <input type="text" id="editShopName" required />
             </div>
             <div class="dashboard-field">
-              <label for="editShopDescription">Opis sklepu</label>
+              <label for="editShopDescription" data-i18n="dashboard.shop_desc_label">Opis sklepu</label>
               <textarea id="editShopDescription" rows="3"></textarea>
             </div>
             <div class="dashboard-field">
-              <label for="editShopAvatarFile">Logo</label>
+              <label for="editShopAvatarFile" data-i18n="dashboard.logo_label">Logo</label>
               <input type="file" id="editShopAvatarFile" accept="image/png,image/jpeg,image/webp,image/gif" />
               <input type="hidden" id="editShopAvatarUrl" />
               <img id="editShopAvatarPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
             <div class="dashboard-field">
-              <label for="editShopBannerFile">Baner</label>
+              <label for="editShopBannerFile" data-i18n="dashboard.banner_label">Baner</label>
               <input type="file" id="editShopBannerFile" accept="image/png,image/jpeg,image/webp,image/gif" />
               <input type="hidden" id="editShopBannerUrl" />
               <img id="editShopBannerPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
-            <p class="dashboard-hint">Publiczny profil: <a id="shopPublicLink" href="#" target="_blank">—</a></p>
-            <button type="submit" class="dashboard-submit-btn">Zapisz zmiany</button>
+            <p class="dashboard-hint"><span data-i18n="dashboard.public_profile_label">Publiczny profil:</span> <a id="shopPublicLink" href="#" target="_blank">—</a></p>
+            <button type="submit" class="dashboard-submit-btn" data-i18n="common.save_changes">Zapisz zmiany</button>
           </form>
         </div>
       </section>
@@ -96,41 +97,41 @@
       <section id="tab-listings" class="dashboard-tab-panel" style="display:none;">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h2>Moje oferty</h2>
-            <button id="newListingBtn" class="dashboard-submit-btn dashboard-btn-small" type="button">+ Dodaj ofertę</button>
+            <h2 data-i18n="dashboard.my_listings_heading">Moje oferty</h2>
+            <button id="newListingBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" data-i18n="dashboard.add_listing_btn">+ Dodaj ofertę</button>
           </div>
 
           <form id="listingForm" class="dashboard-form" style="display:none;">
             <input type="hidden" id="listingId" />
             <div class="dashboard-field">
-              <label for="listingTitle">Tytuł</label>
+              <label for="listingTitle" data-i18n="dashboard.listing_title_label">Tytuł</label>
               <input type="text" id="listingTitle" required />
             </div>
             <div class="dashboard-field">
-              <label for="listingDescription">Opis</label>
+              <label for="listingDescription" data-i18n="dashboard.listing_desc_label">Opis</label>
               <textarea id="listingDescription" rows="3"></textarea>
             </div>
-            <p id="variantQuantityHint" class="dashboard-hint" style="display:none;">Ta oferta ma warianty — ilość poniżej zostanie zastąpiona sumą sztuk ze wszystkich wariantów po zapisaniu.</p>
+            <p id="variantQuantityHint" class="dashboard-hint" style="display:none;" data-i18n="dashboard.variant_qty_hint">Ta oferta ma warianty — ilość poniżej zostanie zastąpiona sumą sztuk ze wszystkich wariantów po zapisaniu.</p>
             <div class="dashboard-field-row">
               <div class="dashboard-field">
-                <label for="listingPrice">Cena bazowa (PLN)</label>
+                <label for="listingPrice" data-i18n="dashboard.base_price_label">Cena bazowa (PLN)</label>
                 <input type="number" id="listingPrice" min="0" step="0.01" required />
               </div>
               <div class="dashboard-field">
-                <label for="listingQuantity">Ilość</label>
+                <label for="listingQuantity" data-i18n="dashboard.quantity_label">Ilość</label>
                 <input type="number" id="listingQuantity" min="0" step="1" required />
               </div>
             </div>
             <div class="dashboard-field">
-              <label for="listingCategory">Kategoria</label>
+              <label for="listingCategory" data-i18n="dashboard.category_label">Kategoria</label>
               <select id="listingCategory"></select>
             </div>
             <div class="dashboard-field">
-              <label for="listingShippingProfile">Profil wysyłki</label>
-              <select id="listingShippingProfile"><option value="">Brak (bez kosztu wysyłki)</option></select>
+              <label for="listingShippingProfile" data-i18n="dashboard.shipping_profile_label">Profil wysyłki</label>
+              <select id="listingShippingProfile"><option value="" data-i18n="dashboard.no_shipping_profile">Brak (bez kosztu wysyłki)</option></select>
             </div>
             <div class="dashboard-field">
-              <label for="listingPhotoFile">Zdjęcia (maks. 8, pierwsze jest okładką)</label>
+              <label for="listingPhotoFile" data-i18n="dashboard.photos_label">Zdjęcia (maks. 8, pierwsze jest okładką)</label>
               <input type="file" id="listingPhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
               <div id="listingPhotosGrid" class="dashboard-photos-grid"></div>
             </div>
@@ -138,50 +139,50 @@
             <div class="dashboard-field">
               <label class="dashboard-checkbox-label">
                 <input type="checkbox" id="listingHasVariants" />
-                Ten produkt ma warianty (np. kolor, rozmiar)
+                <span data-i18n="dashboard.has_variants_label">Ten produkt ma warianty (np. kolor, rozmiar)</span>
               </label>
             </div>
 
             <div id="variantEditor" style="display:none;">
-              <p class="dashboard-hint">Do 2 typów wariacji (np. Kolor, Rozmiar). Wartości oddzielaj przecinkami.</p>
+              <p class="dashboard-hint" data-i18n="dashboard.variant_hint">Do 2 typów wariacji (np. Kolor, Rozmiar). Wartości oddzielaj przecinkami.</p>
               <p id="variantEditorBanner" class="dashboard-banner"></p>
 
               <div id="variantTypeRows"></div>
-              <button id="addVariantTypeBtn" class="dashboard-cancel-btn dashboard-btn-small" type="button">+ Dodaj typ wariacji</button>
-              <button id="generateCombosBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" style="margin-left:8px;">Generuj kombinacje</button>
+              <button id="addVariantTypeBtn" class="dashboard-cancel-btn dashboard-btn-small" type="button" data-i18n="dashboard.add_variant_type_btn">+ Dodaj typ wariacji</button>
+              <button id="generateCombosBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" style="margin-left:8px;" data-i18n="dashboard.generate_combos_btn">Generuj kombinacje</button>
 
               <div class="dashboard-field" style="margin-top:14px;">
                 <label class="dashboard-checkbox-label">
                   <input type="checkbox" id="variantPricesVary" />
-                  Ceny wariantów się różnią
+                  <span data-i18n="dashboard.variant_prices_vary">Ceny wariantów się różnią</span>
                 </label>
-                <p class="dashboard-hint" style="margin-top:4px;">Jeśli wyłączone, wszystkie warianty mają cenę bazową oferty.</p>
+                <p class="dashboard-hint" style="margin-top:4px;" data-i18n="dashboard.variant_prices_hint">Jeśli wyłączone, wszystkie warianty mają cenę bazową oferty.</p>
               </div>
 
               <div id="variantCombosWrap" style="margin-top:16px;"></div>
             </div>
 
             <div class="dashboard-form-actions">
-              <button type="submit" class="dashboard-submit-btn" id="listingSubmitBtn">Dodaj ofertę</button>
-              <button type="button" class="dashboard-cancel-btn" id="cancelListingBtn">Anuluj</button>
+              <button type="submit" class="dashboard-submit-btn" id="listingSubmitBtn" data-i18n="dashboard.add_listing_submit">Dodaj ofertę</button>
+              <button type="button" class="dashboard-cancel-btn" id="cancelListingBtn" data-i18n="common.cancel">Anuluj</button>
             </div>
           </form>
 
           <div class="dashboard-listings-filters">
-            <input type="text" id="listingFilterSearch" placeholder="Szukaj po tytule..." />
+            <input type="text" id="listingFilterSearch" placeholder="Szukaj po tytule..." data-i18n-placeholder="dashboard.filter_search_placeholder" />
             <select id="listingFilterStatus">
-              <option value="">Wszystkie statusy</option>
-              <option value="active">Aktywne</option>
-              <option value="inactive">Nieaktywne</option>
+              <option value="" data-i18n="dashboard.filter_all_statuses">Wszystkie statusy</option>
+              <option value="active" data-i18n="admin.filter_active">Aktywne</option>
+              <option value="inactive" data-i18n="admin.filter_inactive">Nieaktywne</option>
             </select>
-            <select id="listingFilterCategory"><option value="">Wszystkie kategorie</option></select>
+            <select id="listingFilterCategory"><option value="" data-i18n="dashboard.filter_all_categories">Wszystkie kategorie</option></select>
             <select id="listingFilterSort">
-              <option value="">Najnowsze</option>
-              <option value="price_asc">Cena: rosnąco</option>
-              <option value="price_desc">Cena: malejąco</option>
-              <option value="stock_asc">Ilość: rosnąco</option>
-              <option value="stock_desc">Ilość: malejąco</option>
-              <option value="title_asc">Tytuł: A-Z</option>
+              <option value="" data-i18n="shop.sort_newest">Najnowsze</option>
+              <option value="price_asc" data-i18n="shop.sort_price_asc">Cena: rosnąco</option>
+              <option value="price_desc" data-i18n="shop.sort_price_desc">Cena: malejąco</option>
+              <option value="stock_asc" data-i18n="dashboard.sort_stock_asc">Ilość: rosnąco</option>
+              <option value="stock_desc" data-i18n="dashboard.sort_stock_desc">Ilość: malejąco</option>
+              <option value="title_asc" data-i18n="dashboard.sort_title_asc">Tytuł: A-Z</option>
             </select>
           </div>
 
@@ -191,7 +192,7 @@
 
       <section id="tab-orders" class="dashboard-tab-panel" style="display:none;">
         <div class="dashboard-card">
-          <h2>Zamówienia</h2>
+          <h2 data-i18n="dashboard.tab_orders">Zamówienia</h2>
           <div id="ordersTable" class="dashboard-list"></div>
         </div>
       </section>
@@ -199,34 +200,34 @@
       <section id="tab-shipping" class="dashboard-tab-panel" style="display:none;">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h2>Profile wysyłki</h2>
-            <button id="newShippingProfileBtn" class="dashboard-submit-btn dashboard-btn-small" type="button">+ Dodaj profil</button>
+            <h2 data-i18n="dashboard.shipping_profiles_heading">Profile wysyłki</h2>
+            <button id="newShippingProfileBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" data-i18n="dashboard.add_shipping_profile_btn">+ Dodaj profil</button>
           </div>
-          <p class="dashboard-hint">Możesz mieć kilka profili (np. „Przesyłka kurierska”, „Odbiór osobisty”) i przypisywać je do ofert. Cena i czas dostawy są widoczne dla kupujących.</p>
+          <p class="dashboard-hint" data-i18n="dashboard.shipping_profiles_hint">Możesz mieć kilka profili (np. „Przesyłka kurierska”, „Odbiór osobisty”) i przypisywać je do ofert. Cena i czas dostawy są widoczne dla kupujących.</p>
 
           <form id="shippingProfileForm" class="dashboard-form" style="display:none;">
             <input type="hidden" id="shippingProfileId" />
             <div class="dashboard-field">
-              <label for="shippingProfileName">Nazwa</label>
+              <label for="shippingProfileName" data-i18n="dashboard.profile_name_label">Nazwa</label>
               <input type="text" id="shippingProfileName" required />
             </div>
             <div class="dashboard-field-row">
               <div class="dashboard-field">
-                <label for="shippingProfilePrice">Cena (PLN)</label>
+                <label for="shippingProfilePrice" data-i18n="dashboard.profile_price_label">Cena (PLN)</label>
                 <input type="number" id="shippingProfilePrice" min="0" step="0.01" required />
               </div>
               <div class="dashboard-field">
-                <label for="shippingProfileMinDays">Min. dni dostawy</label>
+                <label for="shippingProfileMinDays" data-i18n="dashboard.profile_min_days_label">Min. dni dostawy</label>
                 <input type="number" id="shippingProfileMinDays" min="0" step="1" required />
               </div>
               <div class="dashboard-field">
-                <label for="shippingProfileMaxDays">Maks. dni dostawy</label>
+                <label for="shippingProfileMaxDays" data-i18n="dashboard.profile_max_days_label">Maks. dni dostawy</label>
                 <input type="number" id="shippingProfileMaxDays" min="0" step="1" required />
               </div>
             </div>
             <div class="dashboard-form-actions">
-              <button type="submit" class="dashboard-submit-btn" id="shippingProfileSubmitBtn">Dodaj profil</button>
-              <button type="button" class="dashboard-cancel-btn" id="cancelShippingProfileBtn">Anuluj</button>
+              <button type="submit" class="dashboard-submit-btn" id="shippingProfileSubmitBtn" data-i18n="dashboard.add_profile_submit">Dodaj profil</button>
+              <button type="button" class="dashboard-cancel-btn" id="cancelShippingProfileBtn" data-i18n="common.cancel">Anuluj</button>
             </div>
           </form>
 
@@ -237,6 +238,7 @@
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>

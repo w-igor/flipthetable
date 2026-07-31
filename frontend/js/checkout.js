@@ -71,7 +71,7 @@ async function loadSummary() {
         `;
       })
       .join('');
-    const shippingHtml = `<div class="summary-line summary-shipping-line"><span class="summary-line-title">Wysyłka</span><span>${group.shippingPrice.toFixed(2)} PLN</span></div>`;
+    const shippingHtml = `<div class="summary-line summary-shipping-line"><span class="summary-line-title">${t('checkout.shipping_line')}</span><span>${group.shippingPrice.toFixed(2)} PLN</span></div>`;
 
     groupEl.innerHTML = `<p class="summary-shop-name">${escapeHtml(group.shopName)}</p>${linesHtml}${shippingHtml}`;
     summaryEl.appendChild(groupEl);
@@ -103,7 +103,7 @@ function initCheckout() {
     }));
 
     if (items.length === 0) {
-      showError('Koszyk jest pusty.');
+      showError(t('checkout.empty_cart'));
       return;
     }
 
@@ -122,7 +122,7 @@ function initCheckout() {
     const cardCvc = document.getElementById('cardCvc').value.trim();
     const expiryMatch = document.getElementById('cardExpiry').value.trim().match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
     if (!expiryMatch) {
-      showError('Nieprawidłowa data ważności karty (format MM/RR).');
+      showError(t('checkout.invalid_expiry'));
       return;
     }
     const expMonth = parseInt(expiryMatch[1], 10);
@@ -130,7 +130,7 @@ function initCheckout() {
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Przetwarzanie...';
+    submitBtn.textContent = t('checkout.processing');
 
     try {
       const res = await authFetch('/orders', {
@@ -141,16 +141,16 @@ function initCheckout() {
       const data = await res.json();
 
       if (!res.ok) {
-        showError(data.message || 'Nie udało się złożyć zamówienia');
+        showError(data.message || t('checkout.error_order_failed'));
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Zapłać i złóż zamówienie';
+        submitBtn.textContent = t('checkout.submit');
         return;
       }
 
       localStorage.removeItem('cart');
       const orderIds = data.orders.map((o) => o.id);
 
-      submitBtn.textContent = 'Przetwarzanie płatności...';
+      submitBtn.textContent = t('checkout.processing_payment');
       const paymentResults = await Promise.all(
         orderIds.map((id) =>
           authFetch(`/orders/${id}/pay`, {
@@ -173,9 +173,9 @@ function initCheckout() {
       const suffix = anyFailed ? '&paymentIssue=1' : '';
       window.location.href = `order-confirmation.html?ids=${orderIds.join(',')}${suffix}`;
     } catch (err) {
-      showError('Nie udało się połączyć z serwerem.');
+      showError(t('common.error_connect'));
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Zapłać i złóż zamówienie';
+      submitBtn.textContent = t('checkout.submit');
     }
   });
 }

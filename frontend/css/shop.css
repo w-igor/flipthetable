@@ -81,6 +81,16 @@ body {
   font-size: 14px;
 }
 
+.lang-switcher {
+  padding: 6px 10px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--etsy-card);
+  color: var(--etsy-black);
+  cursor: pointer;
+}
+
 .shop-header-actions a {
   color: var(--etsy-black);
   text-decoration: none;

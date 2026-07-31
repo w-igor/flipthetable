@@ -25,38 +25,57 @@ function logout() {
   window.location.reload();
 }
 
-// Populates #authActions with a greeting + seller/dashboard link + logout,
-// or leaves the logged-out markup (login/register links) untouched.
-function updateHeaderForAuth() {
+// Renders the logged-in header markup. Safe to call repeatedly (e.g. on a
+// language change) since it doesn't touch polling/WS setup.
+function renderHeaderAuthLinks() {
   const authActions = document.getElementById('authActions');
   if (!authActions) return;
 
   const user = getCurrentUser();
   if (!user) return;
 
-  const dashboardLabel = user.is_seller ? 'Panel sprzedawcy' : 'Zostań sprzedawcą';
+  const dashboardLabel = user.is_seller ? t('nav.seller_panel') : t('nav.become_seller');
+  const adminLabel = t('nav.admin_panel');
   const adminLink = user.is_admin
-    ? `<a href="admin.html" class="nav-icon-link" title="Panel administratora" aria-label="Panel administratora">Admin</a>`
+    ? `<a href="admin.html" class="nav-icon-link" title="${adminLabel}" aria-label="${adminLabel}">Admin</a>`
     : '';
+  const unreadCount = document.getElementById('navUnreadBadge');
+  const previousCount = unreadCount && unreadCount.style.display !== 'none' ? unreadCount.textContent : null;
   authActions.innerHTML = `
-    <a href="favorites.html" class="nav-icon-link" title="Ulubione" aria-label="Ulubione">${Icons.heart}</a>
-    <a href="messages.html" class="nav-icon-link" title="Wiadomości" aria-label="Wiadomości">${Icons.messageCircle}<span id="navUnreadBadge" class="nav-unread-badge" style="display:none;"></span></a>
-    <a href="orders.html" class="nav-icon-link" title="Moje zamówienia" aria-label="Moje zamówienia">${Icons.package}</a>
+    <a href="favorites.html" class="nav-icon-link" title="${t('nav.favorites')}" aria-label="${t('nav.favorites')}">${Icons.heart}</a>
+    <a href="messages.html" class="nav-icon-link" title="${t('nav.messages')}" aria-label="${t('nav.messages')}">${Icons.messageCircle}<span id="navUnreadBadge" class="nav-unread-badge" style="display:none;"></span></a>
+    <a href="orders.html" class="nav-icon-link" title="${t('nav.orders')}" aria-label="${t('nav.orders')}">${Icons.package}</a>
     <a href="dashboard.html" class="nav-icon-link" title="${dashboardLabel}" aria-label="${dashboardLabel}">${Icons.store}</a>
     ${adminLink}
     <span class="nav-user-chip" title="${escapeHtml(user.username)}">${Icons.userRound}<span class="nav-username">${escapeHtml(user.username)}</span></span>
-    <a href="#" id="logoutLink" class="nav-icon-link" title="Wyloguj" aria-label="Wyloguj">${Icons.logOut}</a>
+    <a href="#" id="logoutLink" class="nav-icon-link" title="${t('nav.logout')}" aria-label="${t('nav.logout')}">${Icons.logOut}</a>
   `;
   document.getElementById('logoutLink').addEventListener('click', (e) => {
     e.preventDefault();
     logout();
   });
+  if (previousCount !== null) setUnreadBadge(parseInt(previousCount, 10));
+}
+
+// Populates #authActions with a greeting + seller/dashboard link + logout,
+// or leaves the logged-out markup (login/register links) untouched.
+function updateHeaderForAuth() {
+  if (!getCurrentUser()) return;
+  renderHeaderAuthLinks();
 
   refreshUnreadBadge();
   // Live updates arrive over the WebSocket; this is just the slow-poll
   // fallback in case the socket is down for an extended stretch.
   setInterval(refreshUnreadBadge, 60000);
   if (typeof connectWS === 'function') connectWS();
+}
+
+// Re-render the header (and any page-specific dynamic content) when the
+// user switches language via the header <select>. Defined here so ws.js's
+// event dispatch and pages without a logged-in header don't need to guard.
+function onLocaleChange() {
+  renderHeaderAuthLinks();
+  if (typeof onPageLocaleChange === 'function') onPageLocaleChange();
 }
 
 function setUnreadBadge(count) {

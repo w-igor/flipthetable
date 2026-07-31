@@ -110,7 +110,7 @@ function renderListings(data) {
   }
 
   emptyState.style.display = 'none';
-  resultCount.textContent = `${data.total} ${data.total === 1 ? 'produkt' : 'produktów'}`;
+  resultCount.textContent = tn('shop.results_count', data.total);
 
   data.items.forEach((item) => {
     const card = document.createElement('a');
@@ -122,17 +122,17 @@ function renderListings(data) {
     const isFav = favoriteIds.has(item.id);
 
     card.innerHTML = `
-      <button class="listing-card-fav-btn ${isFav ? 'active' : ''}" type="button" title="Ulubione">${isFav ? '♥' : '♡'}</button>
+      <button class="listing-card-fav-btn ${isFav ? 'active' : ''}" type="button" title="${t('nav.favorites')}">${isFav ? '♥' : '♡'}</button>
       <img src="${img}" alt="${escapeHtml(item.title)}" loading="lazy" />
       <div class="listing-card-body">
         <p class="listing-card-shop">${escapeHtml(item.shop_name)}</p>
         <p class="listing-card-title">${escapeHtml(item.title)}</p>
         <p class="listing-card-price">${formatPrice(item.price, item.currency)}</p>
         ${outOfStock
-          ? '<p class="listing-card-stock">Brak w magazynie</p>'
+          ? `<p class="listing-card-stock">${t('shop.out_of_stock')}</p>`
           : item.has_variants
-            ? `<button class="listing-card-add-btn" type="button" data-variants="1">Wybierz opcje</button>`
-            : `<button class="listing-card-add-btn" type="button">Dodaj do koszyka</button>`}
+            ? `<button class="listing-card-add-btn" type="button" data-variants="1">${t('shop.choose_options')}</button>`
+            : `<button class="listing-card-add-btn" type="button">${t('shop.add_to_cart')}</button>`}
       </div>
     `;
 
@@ -146,9 +146,9 @@ function renderListings(data) {
           return;
         }
         addToCart(item.id, 1);
-        addBtn.textContent = 'Dodano ✓';
+        addBtn.textContent = t('shop.added_check');
         setTimeout(() => {
-          addBtn.textContent = 'Dodaj do koszyka';
+          addBtn.textContent = t('shop.add_to_cart');
         }, 1200);
       });
     }
@@ -215,8 +215,12 @@ async function loadListings() {
     renderListings(data);
   } catch (err) {
     console.error('Nie udało się pobrać produktów', err);
-    document.getElementById('resultCount').textContent = 'Błąd ładowania produktów. Sprawdź czy backend działa.';
+    document.getElementById('resultCount').textContent = t('shop.error_loading');
   }
+}
+
+function onPageLocaleChange() {
+  loadListings();
 }
 
 async function initShopPage() {

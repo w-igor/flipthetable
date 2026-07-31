@@ -89,12 +89,12 @@ async function renderCartDrawer() {
   const entries = Object.entries(cart);
 
   if (entries.length === 0) {
-    listEl.innerHTML = '<p class="cart-empty">Koszyk jest pusty</p>';
+    listEl.innerHTML = `<p class="cart-empty">${t('cart.empty')}</p>`;
     if (totalEl) totalEl.textContent = '0.00 PLN';
     return;
   }
 
-  listEl.innerHTML = '<p class="cart-loading">Ładowanie...</p>';
+  listEl.innerHTML = `<p class="cart-loading">${t('common.loading')}</p>`;
 
   const uniqueListingIds = [...new Set(entries.map(([, e]) => e.listingId))];
   const listingResults = await Promise.all(
@@ -132,7 +132,7 @@ async function renderCartDrawer() {
           <button data-action="dec">−</button>
           <span>${entry.quantity}</span>
           <button data-action="inc">+</button>
-          <button data-action="remove" class="cart-item-remove">Usuń</button>
+          <button data-action="remove" class="cart-item-remove">${t('cart.remove')}</button>
         </div>
       </div>
     `;

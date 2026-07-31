@@ -95,23 +95,25 @@
 <body>
   <header class="checkout-header">
     <a href="../index.html">Flip<span>TheTable</span></a>
+    <select id="langSwitcher" class="lang-switcher"></select>
   </header>
 
   <div class="confirmation-wrapper">
     <div class="confirmation-header">
       <div class="check">✅</div>
-      <h1>Dziękujemy za zamówienie!</h1>
-      <p>Poniżej znajdziesz podsumowanie.</p>
+      <h1 data-i18n="order_confirmation.thank_you">Dziękujemy za zamówienie!</h1>
+      <p data-i18n="order_confirmation.summary_below">Poniżej znajdziesz podsumowanie.</p>
     </div>
 
     <div id="paymentBanner"></div>
     <div id="ordersContainer"></div>
 
     <div class="confirmation-actions">
-      <a href="shop.html">Wróć do katalogu</a>
+      <a href="shop.html" data-i18n="common.back_to_catalog">Wróć do katalogu</a>
     </div>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/api.js"></script>
   <script>
     function escapeHtml(str) {
@@ -120,12 +122,6 @@
       return div.innerHTML;
     }
 
-    const paymentStatusLabels = {
-      completed: 'Opłacone',
-      pending: 'Oczekuje na płatność',
-      failed: 'Płatność odrzucona',
-    };
-
     async function loadOrders() {
       const container = document.getElementById('ordersContainer');
       const params = new URLSearchParams(window.location.search);
@@ -133,11 +129,11 @@
 
       if (params.get('paymentIssue') === '1') {
         document.getElementById('paymentBanner').innerHTML =
-          '<div class="payment-banner warning">Płatność nie powiodła się dla części zamówień. Sprawdź status poniżej i spróbuj ponownie w „Moich zamówieniach".</div>';
+          `<div class="payment-banner warning">${t('order_confirmation.payment_issue_warning')}</div>`;
       }
 
       if (!ids) {
-        container.innerHTML = '<p style="text-align:center;">Brak danych zamówienia.</p>';
+        container.innerHTML = `<p style="text-align:center;">${t('order_confirmation.no_data')}</p>`;
         return;
       }
 
@@ -166,14 +162,14 @@
           card.className = 'order-card';
           card.innerHTML = `
             <div class="order-card-header">
-              <span>Sklep: ${escapeHtml(order.shop_name)}</span>
-              <span>Nr zamówienia: ${order.id.slice(0, 8)}</span>
+              <span>${t('order_confirmation.shop_label')} ${escapeHtml(order.shop_name)}</span>
+              <span>${t('order_confirmation.order_number')} ${order.id.slice(0, 8)}</span>
             </div>
             ${linesHtml}
             <div class="order-total">
-              <span class="payment-status-badge payment-status-${paymentStatus}">${paymentStatusLabels[paymentStatus] || paymentStatus}</span>
-              Razem: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}
-              ${parseFloat(order.shipping_amount) > 0 ? ` (w tym wysyłka: ${parseFloat(order.shipping_amount).toFixed(2)} ${order.currency})` : ''}
+              <span class="payment-status-badge payment-status-${paymentStatus}">${t('payment_status.' + paymentStatus)}</span>
+              ${t('checkout.total')}: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}
+              ${parseFloat(order.shipping_amount) > 0 ? ` ${t('order_confirmation.shipping_included', { amount: parseFloat(order.shipping_amount).toFixed(2) + ' ' + order.currency })}` : ''}
             </div>
           `;
           container.appendChild(card);
@@ -183,7 +179,7 @@
       }
 
       if (!container.hasChildNodes()) {
-        container.innerHTML = '<p style="text-align:center;">Nie udało się załadować szczegółów zamówienia.</p>';
+        container.innerHTML = `<p style="text-align:center;">${t('order_confirmation.error_loading')}</p>`;
       }
     }
 

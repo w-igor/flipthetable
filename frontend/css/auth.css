@@ -26,8 +26,24 @@ body {
 
 .auth-topbar {
   display: flex;
+  align-items: center;
   justify-content: center;
+  position: relative;
   padding: 24px 0 8px;
+}
+
+.lang-switcher {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 10px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--etsy-card);
+  color: var(--etsy-black);
+  cursor: pointer;
 }
 
 .auth-logo {

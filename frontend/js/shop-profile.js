@@ -15,7 +15,7 @@ function renderShopHeader(shop) {
       <img class="shop-profile-avatar" src="${avatar}" alt="${escapeHtml(shop.name)}" />
       <div>
         <h1>${escapeHtml(shop.name)}</h1>
-        <p class="shop-profile-meta">${shop.listings_count} ${shop.listings_count === 1 ? 'oferta' : 'ofert'} · ${shop.sales_count} sprzedanych</p>
+        <p class="shop-profile-meta">${tn('shop_profile.listings_count', shop.listings_count)} · ${shop.sales_count} ${t('shop_profile.sales_suffix')}</p>
         ${shop.description ? `<p class="shop-profile-desc">${escapeHtml(shop.description)}</p>` : ''}
         ${contactSellerButtonHtml(shop)}
       </div>
@@ -27,7 +27,7 @@ function contactSellerButtonHtml(shop) {
   const user = getCurrentUser();
   if (!user || user.id === shop.owner_id) return '';
   const url = `messages.html?with=${shop.owner_id}&name=${encodeURIComponent(shop.name)}`;
-  return `<a href="${url}" class="shop-profile-contact-btn">Napisz do sprzedawcy</a>`;
+  return `<a href="${url}" class="shop-profile-contact-btn">${t('shop_profile.contact_seller')}</a>`;
 }
 
 function renderShopListings(items) {
@@ -44,7 +44,7 @@ function renderShopListings(items) {
   }
 
   emptyState.style.display = 'none';
-  resultCount.textContent = `${items.length} ${items.length === 1 ? 'oferta' : 'ofert'}`;
+  resultCount.textContent = tn('shop_profile.listings_count', items.length);
 
   items.forEach((item) => {
     const card = document.createElement('a');
@@ -59,7 +59,7 @@ function renderShopListings(items) {
       <div class="listing-card-body">
         <p class="listing-card-title">${escapeHtml(item.title)}</p>
         <p class="listing-card-price">${formatPrice(item.price, item.currency)}</p>
-        ${outOfStock ? '<p class="listing-card-stock">Brak w magazynie</p>' : ''}
+        ${outOfStock ? `<p class="listing-card-stock">${t('shop.out_of_stock')}</p>` : ''}
       </div>
     `;
 
@@ -70,14 +70,14 @@ function renderShopListings(items) {
 async function loadShopProfile() {
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) {
-    document.getElementById('shopProfileHeader').innerHTML = '<p style="padding:24px;">Brak identyfikatora sklepu.</p>';
+    document.getElementById('shopProfileHeader').innerHTML = `<p style="padding:24px;">${t('shop_profile.no_shop_id')}</p>`;
     return;
   }
 
   try {
     const shopRes = await fetch(`${API_URL}/shops/${id}`);
     if (!shopRes.ok) {
-      document.getElementById('shopProfileHeader').innerHTML = '<p style="padding:24px;">Sklep nie znaleziony.</p>';
+      document.getElementById('shopProfileHeader').innerHTML = `<p style="padding:24px;">${t('shop_profile.not_found')}</p>`;
       return;
     }
     const shop = await shopRes.json();
@@ -87,8 +87,12 @@ async function loadShopProfile() {
     const data = await listingsRes.json();
     renderShopListings(data.items || []);
   } catch (err) {
-    document.getElementById('shopProfileHeader').innerHTML = '<p style="padding:24px;">Błąd ładowania sklepu.</p>';
+    document.getElementById('shopProfileHeader').innerHTML = `<p style="padding:24px;">${t('shop_profile.error_loading')}</p>`;
   }
+}
+
+function onPageLocaleChange() {
+  loadShopProfile();
 }
 
 updateHeaderForAuth();

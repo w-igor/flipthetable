@@ -11,16 +11,18 @@
   <header class="shop-header">
     <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
     <div class="shop-header-actions" style="margin-left:auto;">
+      <select id="langSwitcher" class="lang-switcher"></select>
       <span id="authActions"></span>
     </div>
   </header>
 
   <div class="orders-layout">
-    <h1 class="orders-title">Ulubione</h1>
+    <h1 class="orders-title" data-i18n="favorites.title">Ulubione</h1>
     <div id="favoritesGrid" class="listing-grid"></div>
-    <p id="favoritesEmpty" class="orders-empty" style="display:none;">Nie masz jeszcze żadnych ulubionych produktów.</p>
+    <p id="favoritesEmpty" class="orders-empty" style="display:none;" data-i18n="favorites.empty">Nie masz jeszcze żadnych ulubionych produktów.</p>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/api.js"></script>

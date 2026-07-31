@@ -23,6 +23,19 @@ body {
   background: var(--etsy-card);
   border-bottom: 1px solid var(--etsy-border);
   padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lang-switcher {
+  padding: 6px 10px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--etsy-card);
+  color: var(--etsy-black);
+  cursor: pointer;
 }
 
 .checkout-header a {
