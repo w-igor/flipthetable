@@ -167,6 +167,12 @@ body {
   flex: 1;
 }
 
+.summary-shipping-line {
+  color: var(--etsy-gray);
+  font-style: italic;
+  border-bottom: none;
+}
+
 .summary-total-row {
   display: flex;
   justify-content: space-between;

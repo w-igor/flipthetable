@@ -35,6 +35,7 @@ func main() {
 	mux.HandleFunc("POST /listings", requireAuth(handleCreateListing))
 	mux.HandleFunc("PUT /listings/{id}", requireAuth(handleUpdateListing))
 	mux.HandleFunc("DELETE /listings/{id}", requireAuth(handleDeleteListing))
+	mux.HandleFunc("PUT /listings/{id}/variants", requireAuth(handleReplaceListingVariants))
 	mux.HandleFunc("GET /listings/{id}/reviews", handleGetListingReviews)
 	mux.HandleFunc("POST /reviews", requireAuth(handleCreateReview))
 
@@ -44,6 +45,11 @@ func main() {
 	mux.HandleFunc("GET /shops/{id}", handleGetShopPublic)
 
 	mux.HandleFunc("GET /seller/listings", requireAuth(handleGetMyListings))
+	mux.HandleFunc("GET /seller/listings/{id}", requireAuth(handleGetMyListingByID))
+	mux.HandleFunc("GET /seller/shipping-profiles", requireAuth(handleListShippingProfiles))
+	mux.HandleFunc("POST /seller/shipping-profiles", requireAuth(handleCreateShippingProfile))
+	mux.HandleFunc("PUT /seller/shipping-profiles/{id}", requireAuth(handleUpdateShippingProfile))
+	mux.HandleFunc("DELETE /seller/shipping-profiles/{id}", requireAuth(handleDeleteShippingProfile))
 	mux.HandleFunc("GET /seller/stats", requireAuth(handleGetSellerStats))
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
@@ -66,6 +72,21 @@ func main() {
 	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
 	mux.HandleFunc("GET /orders/{id}", requireAuth(handleGetOrder))
 	mux.HandleFunc("POST /orders/{id}/pay", requireAuth(handlePayOrder))
+
+	mux.HandleFunc("GET /admin/stats", requireAdmin(handleAdminStats))
+	mux.HandleFunc("GET /admin/users", requireAdmin(handleAdminListUsers))
+	mux.HandleFunc("PUT /admin/users/{id}/status", requireAdmin(handleAdminSetUserActive))
+	mux.HandleFunc("PUT /admin/users/{id}/admin-status", requireAdmin(handleAdminSetUserAdmin))
+	mux.HandleFunc("GET /admin/shops", requireAdmin(handleAdminListShops))
+	mux.HandleFunc("PUT /admin/shops/{id}/status", requireAdmin(handleAdminSetShopActive))
+	mux.HandleFunc("GET /admin/listings", requireAdmin(handleAdminListListings))
+	mux.HandleFunc("PUT /admin/listings/{id}/status", requireAdmin(handleAdminSetListingActive))
+	mux.HandleFunc("GET /admin/orders", requireAdmin(handleAdminListOrders))
+	mux.HandleFunc("GET /admin/audit-log", requireAdmin(handleAdminListAuditLog))
+	mux.HandleFunc("GET /admin/categories", requireAdmin(handleAdminListCategories))
+	mux.HandleFunc("POST /admin/categories", requireAdmin(handleAdminCreateCategory))
+	mux.HandleFunc("PUT /admin/categories/{id}", requireAdmin(handleAdminUpdateCategory))
+	mux.HandleFunc("DELETE /admin/categories/{id}", requireAdmin(handleAdminDeleteCategory))
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})

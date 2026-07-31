@@ -130,7 +130,9 @@ function renderListings(data) {
         <p class="listing-card-price">${formatPrice(item.price, item.currency)}</p>
         ${outOfStock
           ? '<p class="listing-card-stock">Brak w magazynie</p>'
-          : `<button class="listing-card-add-btn" type="button">Dodaj do koszyka</button>`}
+          : item.has_variants
+            ? `<button class="listing-card-add-btn" type="button" data-variants="1">Wybierz opcje</button>`
+            : `<button class="listing-card-add-btn" type="button">Dodaj do koszyka</button>`}
       </div>
     `;
 
@@ -139,6 +141,10 @@ function renderListings(data) {
       addBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (addBtn.dataset.variants) {
+          window.location.href = `listing.html?id=${item.id}`;
+          return;
+        }
         addToCart(item.id, 1);
         addBtn.textContent = 'Dodano ✓';
         setTimeout(() => {

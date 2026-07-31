@@ -1,0 +1,69 @@
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.admin-filter {
+  padding: 10px 12px;
+  border: 1px solid var(--etsy-border);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--etsy-gray);
+}
+
+.admin-pager button {
+  padding: 7px 14px;
+  border: 1px solid var(--etsy-border);
+  background: var(--etsy-card);
+  border-radius: 18px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-pager button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-badge.active {
+  background: #eaf6ea;
+  color: #2e7d32;
+}
+
+.admin-badge.inactive {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.admin-badge.admin {
+  background: #fff3e0;
+  color: #b45309;
+}

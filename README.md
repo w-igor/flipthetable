@@ -39,6 +39,8 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Zakładanie sklepu (dowolne konto może „zostać sprzedawcą" zakładając sklep — `POST /shops`)
 - ✅ Publiczny profil sklepu (`pages/shop-profile.html`) — baner, avatar, opis, siatka ofert
 - ✅ Panel sprzedawcy (`pages/dashboard.html`): edycja profilu sklepu, CRUD ofert (dodaj/edytuj/wyłącz), zarządzanie zamówieniami (zmiana statusu), statystyki (liczba zamówień, przychód, aktywne oferty)
+- ✅ Warianty ofert — sprzedawca definiuje do 2 własnych typów wariacji (np. Kolor, Rozmiar), każdy z dowolnymi wartościami; każda kombinacja ma własną ilość na stanie i opcjonalną własną cenę (puste = cena bazowa). Kupujący wybiera wariant na stronie produktu; stan magazynowy jest blokowany per-kombinacja przy składaniu zamówienia, a etykieta wariantu jest zapisywana w historii zamówienia nawet po usunięciu wariantu przez sprzedawcę.
+- ✅ Profile wysyłki — sprzedawca może mieć kilka profili (nazwa, cena, zakres dni dostawy) i przypisać jeden do każdej oferty. Przy zamówieniu z wielu ofert jednego sklepu naliczana jest jedna opłata za wysyłkę — najdroższy z profili użytych w zamówieniu (nie suma), doliczana do `total_amount` zamówienia.
 
 ### Opinie
 - ✅ Kupujący może ocenić zakupioną pozycję (gwiazdki 1-5 + komentarz) ze strony „Moje zamówienia" lub ze strony produktu, gdy zamówienie jest opłacone/w realizacji/wysłane/dostarczone
@@ -57,11 +59,50 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 ### Zdjęcia
 - ✅ Lokalny upload zdjęć ofert i logo/baneru sklepu (`POST /uploads`)
 
+### Panel administracyjny
+- ✅ Rola `is_admin` na koncie + middleware `requireAdmin` (`backend/middleware.go`)
+- ✅ Panel (`pages/admin.html`) w tym samym froncie, chroniony po stronie API — zakładki: Przegląd, Użytkownicy, Sklepy, Oferty, Zamówienia, Kategorie, Dziennik zdarzeń
+- ✅ Statystyki platformy (użytkownicy, sprzedawcy, sklepy, oferty, zamówienia wg statusu, przychód)
+- ✅ Blokowanie/odblokowywanie użytkowników, sklepów i ofert (wyszukiwanie + paginacja)
+- ✅ Nadawanie/odbieranie roli administratora innym kontom z poziomu panelu (bez możliwości zmiany własnych uprawnień)
+- ✅ Zarządzanie kategoriami z poziomu panelu (CRUD, hierarchia, kolejność sortowania)
+- ✅ Dziennik zdarzeń (`admin_audit_log`) — kto, co i kiedy zmienił w panelu
+
 ## Niezrobione jeszcze ❌
 
 - ❌ WebSockety / prawdziwe powiadomienia push (obecnie tylko polling dla licznika nieprzeczytanych wiadomości)
 - ❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
 - ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
+- ❌ Zgłaszanie ofert/sklepów przez użytkowników (kolejka moderacji) — admin musi na razie ręcznie przeglądać listy
+
+### Funkcje z Etsy, których jeszcze nie mamy
+
+Marketing i widoczność:
+- ❌ Etsy Ads / Promoted Listings — płatna reklama PPC wewnątrz platformy
+- ❌ Offsite Ads — reklama ofert poza platformą (Google/Facebook/Instagram/Pinterest), prowizja tylko od sprzedaży
+- ❌ Kupony i wyprzedaże (zniżki %/kwotowe, zaplanowane promocje, darmowa wysyłka jako zachęta)
+- ❌ Star Seller — automatyczna odznaka zaufania z czasu odpowiedzi, terminowości wysyłki i ocen
+
+Zakupy i płatności:
+- ❌ Prawdziwe metody płatności (Apple Pay, Google Pay, raty Klarna, PayPal, karty podarunkowe) — obecnie tylko symulowana karta
+- ❌ Personalizacja produktu — pole „dodaj swoją personalizację" na ofercie (np. grawer, dedykacja)
+- ❌ Opcje prezentowe (pakowanie, wiadomość, paragon bez ceny)
+- ❌ Nazwane, udostępnialne listy życzeń/kolekcje (mamy tylko płaskie „ulubione")
+- ❌ Filtrowanie po czasie dostawy, lokalizacji sklepu, dodatkowych atrybutach produktu
+
+Sprzedawcy:
+- ❌ Zakup i druk prawdziwych etykiet wysyłkowych z panelu (integracja z kurierem)
+- ❌ Sekcje/kolekcje w sklepie, masowa edycja ofert, import/export CSV
+- ❌ Rozbudowana analityka sprzedawcy (źródła ruchu, konwersja, wizyty) — mamy tylko podstawowe liczby
+- ❌ Digital downloads — natychmiastowa dostawa produktu cyfrowego bez fizycznej wysyłki
+
+Zaufanie i obsługa sporów:
+- ❌ System zgłoszeń/sporów (case system) + program ochrony kupującego z gwarantowanym zwrotem
+- ❌ Formalne, ustrukturyzowane polityki sklepu (zwroty, wymiany, prywatność) zamiast wolnego tekstu
+
+Zasięg:
+- ❌ Wielojęzyczność i automatyczne tłumaczenie ofert, wielowalutowość
+- ❌ Aplikacje mobilne (obecnie tylko web)
 
 ## Wymagania
 
@@ -108,7 +149,7 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 - `GET /listings/:id` — szczegóły produktu (zwiększa `views_count`)
 
 ### Zamówienia (wymagają auth)
-- `POST /orders` — `{items: [{listing_id, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep
+- `POST /orders` — `{items: [{listing_id, variant_sku_id?, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep; `variant_sku_id` jest wymagane, gdy oferta ma warianty
 - `GET /orders` — historia zamówień kupującego (z pozycjami i flagą `reviewed` per pozycja)
 - `GET /orders/:id` — szczegóły zamówienia
 - `POST /orders/:id/pay` — `{cardholder_name, card_number, exp_month, exp_year, cvc}` — symulowana płatność za zamówienie (kupujący, zamówienie musi być `pending`)
@@ -123,7 +164,10 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 - `POST /listings` — dodanie oferty do własnego sklepu
 - `PUT /listings/:id` — edycja własnej oferty
 - `DELETE /listings/:id` — dezaktywacja oferty (soft-delete, `is_active = false`)
+- `PUT /listings/:id/variants` — nadpisuje całą konfigurację wariantów oferty `{types: [{name, options: [...]}] (max 2), skus: [{option_values: [...], price, quantity}]}`; `has_variants` i zagregowana `quantity` oferty są przeliczane automatycznie
 - `GET /seller/listings` — wszystkie własne oferty (także nieaktywne)
+- `GET /seller/listings/:id` — pełne dane własnej oferty wraz z wariantami (niezależnie od `is_active`)
+- `GET /seller/shipping-profiles` / `POST /seller/shipping-profiles` / `PUT /seller/shipping-profiles/:id` / `DELETE /seller/shipping-profiles/:id` — CRUD profili wysyłki własnego sklepu (`{name, price, min_days, max_days}`)
 - `GET /seller/stats` — statystyki sklepu (zamówienia, przychód, aktywne/wszystkie oferty)
 - `GET /seller/orders` — zamówienia złożone we własnym sklepie
 - `PUT /seller/orders/:id/status` — zmiana statusu zamówienia
@@ -131,6 +175,24 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 ### Opinie
 - `POST /reviews` — `{order_item_id, rating, comment}` — ocena zakupionej pozycji (auth, wymaga statusu zamówienia `paid`/`processing`/`shipped`/`delivered`)
 - `GET /listings/:id/reviews` — lista opinii dla produktu
+
+### Admin (wymagają auth + `is_admin = true`)
+- `GET /admin/stats` — statystyki platformy (użytkownicy, sklepy, oferty, zamówienia wg statusu, przychód)
+- `GET /admin/users` — lista użytkowników; query params: `q`, `page`, `page_size`
+- `PUT /admin/users/:id/status` — `{is_active}` — blokuje/odblokowuje konto
+- `PUT /admin/users/:id/admin-status` — `{is_admin}` — nadaje/odbiera uprawnienia administratora (nie można zmienić własnych)
+- `GET /admin/shops` — lista sklepów; query params: `q`, `page`, `page_size`
+- `PUT /admin/shops/:id/status` — `{is_active}` — blokuje/odblokowuje sklep
+- `GET /admin/listings` — lista ofert; query params: `q`, `active`, `page`, `page_size`
+- `PUT /admin/listings/:id/status` — `{is_active}` — ukrywa/przywraca ofertę
+- `GET /admin/orders` — lista wszystkich zamówień; query params: `status`, `page`, `page_size`
+- `GET /admin/categories` / `POST /admin/categories` / `PUT /admin/categories/:id` / `DELETE /admin/categories/:id` — CRUD kategorii
+- `GET /admin/audit-log` — historia działań administratorów; query params: `page`, `page_size`
+
+**Nadanie pierwszego konta administratora** (kolejnym kontom uprawnienia nadaje się już z panelu — zakładka Użytkownicy):
+```sql
+UPDATE users SET is_admin = TRUE WHERE email = 'twoj@email.pl';
+```
 
 ## Environment Variables
 

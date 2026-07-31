@@ -69,9 +69,39 @@
       font-weight: 600;
       cursor: pointer;
     }
+    .listing-detail-shipping {
+      font-size: 13px;
+      color: #444;
+      margin: -8px 0 12px;
+    }
     .listing-detail-fav-btn.active {
       color: #e0245e;
       border-color: #e0245e;
+    }
+    .listing-variant-row {
+      margin-bottom: 12px;
+    }
+    .listing-variant-row label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .listing-variant-row select {
+      width: 100%;
+      max-width: 280px;
+      padding: 9px 10px;
+      border: 1px solid #d5d0c9;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .listing-variant-stock {
+      font-size: 13px;
+      color: #6b6b6b;
+      margin: 4px 0 0;
+    }
+    .listing-variant-stock.warn {
+      color: #c0392b;
     }
     .back-link {
       display: inline-block;
@@ -228,29 +258,39 @@
         const img = (item.photos && item.photos[0] && item.photos[0].url) || 'https://picsum.photos/seed/placeholder/600/600';
 
         document.title = `${item.title} — FlipTheTable`;
+        const hasVariants = item.has_variants && (item.variant_types || []).length > 0;
+
         container.innerHTML = `
           <img src="${img}" alt="${escapeHtml(item.title)}" />
           <div class="listing-detail-info">
             <h1>${escapeHtml(item.title)}</h1>
             <p class="listing-detail-shop">Sprzedawca: <a href="shop-profile.html?id=${item.shop_id}">${escapeHtml(item.shop_name)}</a></p>
-            <p class="listing-detail-price">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
+            <p class="listing-detail-price" id="listingPrice">${parseFloat(item.price).toFixed(2)} ${item.currency}</p>
             <p class="listing-detail-desc">${escapeHtml(item.description || '')}</p>
-            <p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>
-            ${item.quantity > 0 ? `
-              <div class="listing-detail-add-row">
-                <input type="number" id="qtyInput" class="listing-detail-qty" value="1" min="1" max="${item.quantity}" />
-                <button id="addToCartBtn" class="listing-detail-add-btn">Dodaj do koszyka</button>
-              </div>
-            ` : ''}
+            ${item.shipping ? `<p class="listing-detail-shipping">🚚 Wysyłka: ${parseFloat(item.shipping.price).toFixed(2)} PLN · ${item.shipping.min_days === item.shipping.max_days ? `${item.shipping.min_days} dni` : `${item.shipping.min_days}-${item.shipping.max_days} dni`}</p>` : ''}
+            ${hasVariants ? '<div id="variantPicker"></div>' : `<p>${item.quantity > 0 ? `Dostępnych sztuk: ${item.quantity}` : 'Brak w magazynie'}</p>`}
+            <div class="listing-detail-add-row" id="addRow" style="display:${hasVariants ? 'none' : (item.quantity > 0 ? 'flex' : 'none')};">
+              <input type="number" id="qtyInput" class="listing-detail-qty" value="1" min="1" max="${item.quantity || 1}" />
+              <button id="addToCartBtn" class="listing-detail-add-btn" ${hasVariants ? 'disabled' : ''}>Dodaj do koszyka</button>
+            </div>
             <button id="favToggleBtn" class="listing-detail-fav-btn" type="button">♡ Dodaj do ulubionych</button>
           </div>
         `;
 
+        let selectedSku = null;
+
+        if (hasVariants) {
+          setupVariantPicker(item, (sku) => {
+            selectedSku = sku;
+          });
+        }
+
         const addBtn = document.getElementById('addToCartBtn');
         if (addBtn) {
           addBtn.addEventListener('click', () => {
-            const qty = Math.max(1, Math.min(item.quantity, parseInt(document.getElementById('qtyInput').value, 10) || 1));
-            addToCart(item.id, qty);
+            const maxQty = hasVariants ? (selectedSku ? selectedSku.quantity : 0) : item.quantity;
+            const qty = Math.max(1, Math.min(maxQty, parseInt(document.getElementById('qtyInput').value, 10) || 1));
+            addToCart(item.id, qty, hasVariants ? selectedSku.id : null);
             addBtn.textContent = 'Dodano ✓';
             setTimeout(() => { addBtn.textContent = 'Dodaj do koszyka'; }, 1200);
           });
@@ -262,6 +302,76 @@
       } catch (err) {
         container.innerHTML = '<p>Błąd ładowania produktu.</p>';
       }
+    }
+
+    function findMatchingSku(item, selectedOptionIds) {
+      return (item.variant_skus || []).find((sku) => {
+        for (let i = 0; i < selectedOptionIds.length; i++) {
+          const field = i === 0 ? 'option1_id' : 'option2_id';
+          if (sku[field] !== selectedOptionIds[i]) return false;
+        }
+        return true;
+      });
+    }
+
+    function setupVariantPicker(item, onSelectionChange) {
+      const wrap = document.getElementById('variantPicker');
+      const types = item.variant_types || [];
+
+      wrap.innerHTML = types
+        .map(
+          (t, i) => `
+        <div class="listing-variant-row">
+          <label for="variantSelect${i}">${escapeHtml(t.name)}</label>
+          <select id="variantSelect${i}">
+            <option value="">Wybierz...</option>
+            ${t.options.map((o) => `<option value="${o.id}">${escapeHtml(o.value)}</option>`).join('')}
+          </select>
+        </div>
+      `
+        )
+        .join('') + '<p class="listing-variant-stock" id="variantStockInfo"></p>';
+
+      const evaluate = () => {
+        const selectedIds = types.map((_, i) => document.getElementById(`variantSelect${i}`).value);
+        const stockInfo = document.getElementById('variantStockInfo');
+        const addBtn = document.getElementById('addToCartBtn');
+        const qtyInput = document.getElementById('qtyInput');
+        const addRow = document.getElementById('addRow');
+        const priceEl = document.getElementById('listingPrice');
+
+        if (selectedIds.some((v) => !v)) {
+          stockInfo.textContent = '';
+          stockInfo.className = 'listing-variant-stock';
+          addRow.style.display = 'none';
+          onSelectionChange(null);
+          return;
+        }
+
+        const sku = findMatchingSku(item, selectedIds);
+        if (!sku || sku.quantity === 0) {
+          stockInfo.textContent = 'Ten wariant jest niedostępny.';
+          stockInfo.className = 'listing-variant-stock warn';
+          addRow.style.display = 'none';
+          onSelectionChange(null);
+          return;
+        }
+
+        const effectivePrice = sku.price !== undefined && sku.price !== null ? parseFloat(sku.price) : parseFloat(item.price);
+        priceEl.textContent = `${effectivePrice.toFixed(2)} ${item.currency}`;
+        stockInfo.textContent = `Dostępnych sztuk: ${sku.quantity}`;
+        stockInfo.className = 'listing-variant-stock';
+        addRow.style.display = 'flex';
+        qtyInput.max = sku.quantity;
+        if (parseInt(qtyInput.value, 10) > sku.quantity) qtyInput.value = sku.quantity;
+        addBtn.disabled = false;
+        onSelectionChange(sku);
+      };
+
+      types.forEach((_, i) => {
+        document.getElementById(`variantSelect${i}`).addEventListener('change', evaluate);
+      });
+      evaluate();
     }
 
     async function setupFavoriteButton(listingId) {

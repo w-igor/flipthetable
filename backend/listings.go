@@ -89,7 +89,7 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	listQuery := `
 		SELECT
 			l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
-			l.price, l.currency, l.quantity, l.is_active, l.views_count,
+			l.price, l.currency, l.quantity, l.is_active, l.has_variants, l.shipping_profile_id, l.views_count,
 			l.sales_count, l.avg_rating, l.created_at,
 			(SELECT url FROM listing_photos p WHERE p.listing_id = l.id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1)
 		FROM listings l
@@ -111,13 +111,16 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 		var l Listing
 		if err := rows.Scan(
 			&l.ID, &l.ShopID, &l.ShopName, &l.CategoryID, &l.Title, &l.Description,
-			&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.ViewsCount,
+			&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.HasVariants, &l.ShippingProfileID, &l.ViewsCount,
 			&l.SalesCount, &l.AvgRating, &l.CreatedAt, &l.PrimaryPhoto,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu produktów")
 			return
 		}
 		items = append(items, l)
+	}
+	for i := range items {
+		attachShipping(ctx, &items[i])
 	}
 
 	totalPages := (total + pageSize - 1) / pageSize
@@ -144,20 +147,21 @@ func handleGetListing(w http.ResponseWriter, r *http.Request) {
 	err := dbPool.QueryRow(ctx, `
 		SELECT
 			l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
-			l.price, l.currency, l.quantity, l.is_active, l.views_count,
+			l.price, l.currency, l.quantity, l.is_active, l.has_variants, l.shipping_profile_id, l.views_count,
 			l.sales_count, l.avg_rating, l.created_at
 		FROM listings l
 		JOIN shops s ON s.id = l.shop_id
 		WHERE l.id = $1 AND l.is_active = TRUE
 	`, id).Scan(
 		&l.ID, &l.ShopID, &l.ShopName, &l.CategoryID, &l.Title, &l.Description,
-		&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.ViewsCount,
+		&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.HasVariants, &l.ShippingProfileID, &l.ViewsCount,
 		&l.SalesCount, &l.AvgRating, &l.CreatedAt,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Produkt nie znaleziony")
 		return
 	}
+	attachShipping(ctx, &l)
 
 	rows, err := dbPool.Query(ctx, `
 		SELECT id, url, alt_text, is_primary, sort_order
@@ -173,6 +177,10 @@ func handleGetListing(w http.ResponseWriter, r *http.Request) {
 				l.Photos = append(l.Photos, p)
 			}
 		}
+	}
+
+	if l.HasVariants {
+		l.VariantTypes, l.VariantSkus = fetchListingVariants(ctx, id)
 	}
 
 	go dbPool.Exec(context.Background(), `UPDATE listings SET views_count = views_count + 1 WHERE id = $1`, id)

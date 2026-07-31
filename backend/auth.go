@@ -57,10 +57,10 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	err = dbPool.QueryRow(ctx, `
 		INSERT INTO users (email, username, password_hash, is_seller)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, username, full_name, avatar_url, is_seller, is_active, created_at
+		RETURNING id, email, username, full_name, avatar_url, is_seller, is_admin, is_active, created_at
 	`, req.Email, req.Username, string(passwordHash), req.IsSeller).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FullName, &user.AvatarURL,
-		&user.IsSeller, &user.IsActive, &user.CreatedAt,
+		&user.IsSeller, &user.IsAdmin, &user.IsActive, &user.CreatedAt,
 	)
 
 	if err != nil {
@@ -100,11 +100,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var passwordHash string
 	err := dbPool.QueryRow(ctx, `
-		SELECT id, email, username, full_name, avatar_url, password_hash, is_seller, is_active, created_at
+		SELECT id, email, username, full_name, avatar_url, password_hash, is_seller, is_admin, is_active, created_at
 		FROM users WHERE email = $1
 	`, req.Email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FullName, &user.AvatarURL,
-		&passwordHash, &user.IsSeller, &user.IsActive, &user.CreatedAt,
+		&passwordHash, &user.IsSeller, &user.IsAdmin, &user.IsActive, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -173,11 +173,11 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 
 	var user User
 	err := dbPool.QueryRow(ctx, `
-		SELECT id, email, username, full_name, avatar_url, is_seller, is_active, created_at
+		SELECT id, email, username, full_name, avatar_url, is_seller, is_admin, is_active, created_at
 		FROM users WHERE id = $1
 	`, userID).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FullName, &user.AvatarURL,
-		&user.IsSeller, &user.IsActive, &user.CreatedAt,
+		&user.IsSeller, &user.IsAdmin, &user.IsActive, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {

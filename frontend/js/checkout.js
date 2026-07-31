@@ -12,64 +12,74 @@ function showError(message) {
 
 async function loadSummary() {
   const cart = JSON.parse(localStorage.getItem('cart') || '{}');
-  const listingIds = Object.keys(cart);
+  const entries = Object.entries(cart);
 
-  if (listingIds.length === 0) {
+  if (entries.length === 0) {
     document.getElementById('checkoutEmpty').style.display = 'block';
     document.getElementById('checkoutLayout').style.display = 'none';
     return null;
   }
 
-  const results = await Promise.all(
-    listingIds.map((id) =>
+  const uniqueListingIds = [...new Set(entries.map(([, e]) => e.listingId))];
+  const listingResults = await Promise.all(
+    uniqueListingIds.map((id) =>
       fetch(`${API_URL}/listings/${id}`)
         .then((res) => (res.ok ? res.json() : null))
         .catch(() => null)
     )
   );
+  const listingsById = Object.fromEntries(uniqueListingIds.map((id, i) => [id, listingResults[i]]));
 
   const shopGroups = {};
   let total = 0;
 
-  results.forEach((listing, idx) => {
+  entries.forEach(([, entry]) => {
+    const listing = listingsById[entry.listingId];
     if (!listing) return;
-    const listingId = listingIds[idx];
-    const qty = cart[listingId];
-    const lineTotal = parseFloat(listing.price) * qty;
+    const line = resolveCartLine(listing, entry);
+    if (!line) return;
+    const lineTotal = line.price * entry.quantity;
     total += lineTotal;
 
     if (!shopGroups[listing.shop_id]) {
-      shopGroups[listing.shop_id] = { shopName: listing.shop_name, lines: [] };
+      shopGroups[listing.shop_id] = { shopName: listing.shop_name, lines: [], shippingPrice: 0 };
     }
-    shopGroups[listing.shop_id].lines.push({ listing, qty, lineTotal });
+    if (listing.shipping) {
+      shopGroups[listing.shop_id].shippingPrice = Math.max(shopGroups[listing.shop_id].shippingPrice, parseFloat(listing.shipping.price));
+    }
+    shopGroups[listing.shop_id].lines.push({ listing, entry, line, lineTotal });
   });
 
   const summaryEl = document.getElementById('summaryContent');
   summaryEl.innerHTML = '';
 
   Object.values(shopGroups).forEach((group) => {
+    total += group.shippingPrice;
+
     const groupEl = document.createElement('div');
     groupEl.className = 'summary-shop-group';
     const linesHtml = group.lines
-      .map(({ listing, qty, lineTotal }) => {
+      .map(({ listing, entry, line, lineTotal }) => {
         const img = listing.primary_photo || 'https://picsum.photos/seed/placeholder/200/200';
+        const variantSuffix = line.label ? ` (${escapeHtml(line.label)})` : '';
         return `
           <div class="summary-line">
             <img src="${img}" alt="${escapeHtml(listing.title)}" />
-            <span class="summary-line-title">${escapeHtml(listing.title)} × ${qty}</span>
+            <span class="summary-line-title">${escapeHtml(listing.title)}${variantSuffix} × ${entry.quantity}</span>
             <span>${lineTotal.toFixed(2)} PLN</span>
           </div>
         `;
       })
       .join('');
+    const shippingHtml = `<div class="summary-line summary-shipping-line"><span class="summary-line-title">Wysyłka</span><span>${group.shippingPrice.toFixed(2)} PLN</span></div>`;
 
-    groupEl.innerHTML = `<p class="summary-shop-name">${escapeHtml(group.shopName)}</p>${linesHtml}`;
+    groupEl.innerHTML = `<p class="summary-shop-name">${escapeHtml(group.shopName)}</p>${linesHtml}${shippingHtml}`;
     summaryEl.appendChild(groupEl);
   });
 
   document.getElementById('summaryTotal').textContent = `${total.toFixed(2)} PLN`;
 
-  return { cart, listingIds };
+  return { cart };
 }
 
 function initCheckout() {
@@ -86,7 +96,11 @@ function initCheckout() {
     document.getElementById('errorBanner').classList.remove('show');
 
     const cart = JSON.parse(localStorage.getItem('cart') || '{}');
-    const items = Object.entries(cart).map(([listing_id, quantity]) => ({ listing_id, quantity }));
+    const items = Object.values(cart).map((entry) => ({
+      listing_id: entry.listingId,
+      variant_sku_id: entry.variantSkuId || undefined,
+      quantity: entry.quantity,
+    }));
 
     if (items.length === 0) {
       showError('Koszyk jest pusty.');

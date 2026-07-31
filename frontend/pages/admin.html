@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel administratora — FlipTheTable</title>
+  <link rel="stylesheet" href="../css/shop.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+  <header class="shop-header">
+    <a href="../index.html" class="shop-logo">Flip<span>TheTable</span></a>
+    <div class="shop-header-actions" style="margin-left:auto;">
+      <span id="authActions"></span>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    <h1 class="dashboard-title">Panel administratora</h1>
+    <div id="adminBanner" class="dashboard-banner"></div>
+
+    <div id="adminDenied" class="dashboard-card" style="display:none;">
+      <h2>Brak dostępu</h2>
+      <p class="dashboard-hint">To konto nie ma uprawnień administratora.</p>
+    </div>
+
+    <div id="adminMain" class="dashboard-shell" style="display:none;">
+      <aside class="dashboard-sidebar">
+        <nav class="dashboard-sidebar-nav">
+          <button class="dashboard-tab active" data-tab="overview">Przegląd</button>
+          <button class="dashboard-tab" data-tab="users">Użytkownicy</button>
+          <button class="dashboard-tab" data-tab="shops">Sklepy</button>
+          <button class="dashboard-tab" data-tab="listings">Oferty</button>
+          <button class="dashboard-tab" data-tab="orders">Zamówienia</button>
+          <button class="dashboard-tab" data-tab="categories">Kategorie</button>
+          <button class="dashboard-tab" data-tab="audit">Dziennik zdarzeń</button>
+        </nav>
+      </aside>
+
+      <div class="dashboard-main">
+      <section id="tab-overview" class="dashboard-tab-panel">
+        <div class="dashboard-card">
+          <h2>Statystyki platformy</h2>
+          <div class="dashboard-stats-grid" id="overviewStats"></div>
+        </div>
+        <div class="dashboard-card">
+          <h2>Zamówienia wg statusu</h2>
+          <div class="dashboard-stats-grid" id="overviewOrderStatus"></div>
+        </div>
+      </section>
+
+      <section id="tab-users" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="admin-toolbar">
+            <input type="text" id="usersSearch" class="admin-search" placeholder="Szukaj po nazwie lub e-mailu..." />
+          </div>
+          <div id="usersTable" class="dashboard-list"></div>
+          <div class="admin-pager" id="usersPager"></div>
+        </div>
+      </section>
+
+      <section id="tab-shops" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="admin-toolbar">
+            <input type="text" id="shopsSearch" class="admin-search" placeholder="Szukaj sklepu..." />
+          </div>
+          <div id="shopsTable" class="dashboard-list"></div>
+          <div class="admin-pager" id="shopsPager"></div>
+        </div>
+      </section>
+
+      <section id="tab-listings" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="admin-toolbar">
+            <input type="text" id="listingsSearch" class="admin-search" placeholder="Szukaj oferty..." />
+            <select id="listingsActiveFilter" class="admin-filter">
+              <option value="">Wszystkie</option>
+              <option value="true">Aktywne</option>
+              <option value="false">Nieaktywne</option>
+            </select>
+          </div>
+          <div id="listingsTable" class="dashboard-list"></div>
+          <div class="admin-pager" id="listingsPager"></div>
+        </div>
+      </section>
+
+      <section id="tab-orders" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="admin-toolbar">
+            <select id="ordersStatusFilter" class="admin-filter">
+              <option value="">Wszystkie statusy</option>
+              <option value="pending">Oczekujące</option>
+              <option value="paid">Opłacone</option>
+              <option value="processing">W realizacji</option>
+              <option value="shipped">Wysłane</option>
+              <option value="delivered">Dostarczone</option>
+              <option value="cancelled">Anulowane</option>
+              <option value="refunded">Zwrócone</option>
+            </select>
+          </div>
+          <div id="ordersTable" class="dashboard-list"></div>
+          <div class="admin-pager" id="ordersPager"></div>
+        </div>
+      </section>
+
+      <section id="tab-categories" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="dashboard-card-header">
+            <h2>Kategorie</h2>
+            <button id="newCategoryBtn" class="dashboard-submit-btn dashboard-btn-small" type="button">+ Dodaj kategorię</button>
+          </div>
+
+          <form id="categoryForm" class="dashboard-form" style="display:none;">
+            <input type="hidden" id="categoryId" />
+            <div class="dashboard-field">
+              <label for="categoryName">Nazwa</label>
+              <input type="text" id="categoryName" required />
+            </div>
+            <div class="dashboard-field">
+              <label for="categoryParent">Kategoria nadrzędna</label>
+              <select id="categoryParent"></select>
+            </div>
+            <div class="dashboard-field">
+              <label for="categoryDescription">Opis</label>
+              <textarea id="categoryDescription" rows="2"></textarea>
+            </div>
+            <div class="dashboard-field">
+              <label for="categorySortOrder">Kolejność sortowania</label>
+              <input type="number" id="categorySortOrder" step="1" value="0" />
+            </div>
+            <div class="dashboard-form-actions">
+              <button type="submit" class="dashboard-submit-btn" id="categorySubmitBtn">Dodaj kategorię</button>
+              <button type="button" class="dashboard-cancel-btn" id="cancelCategoryBtn">Anuluj</button>
+            </div>
+          </form>
+
+          <div id="categoriesTable" class="dashboard-list"></div>
+        </div>
+      </section>
+
+      <section id="tab-audit" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <h2>Dziennik zdarzeń</h2>
+          <p class="dashboard-hint">Historia działań administratorów w panelu.</p>
+          <div id="auditTable" class="dashboard-list"></div>
+          <div class="admin-pager" id="auditPager"></div>
+        </div>
+      </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/icons.js"></script>
+  <script src="../js/nav.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

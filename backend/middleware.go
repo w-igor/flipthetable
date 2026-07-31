@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type contextKey string
@@ -33,6 +34,28 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), userIDContextKey, claims.UserID)
 		next(w, r.WithContext(ctx))
 	}
+}
+
+func requireAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return requireAuth(func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var isAdmin, isActive bool
+		err := dbPool.QueryRow(ctx, `SELECT is_admin, is_active FROM users WHERE id = $1`, userID).Scan(&isAdmin, &isActive)
+		if err != nil || !isAdmin || !isActive {
+			writeError(w, http.StatusForbidden, "Brak uprawnień administratora")
+			return
+		}
+
+		next(w, r)
+	})
 }
 
 func withCORS(next http.Handler) http.Handler {

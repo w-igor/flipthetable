@@ -34,6 +34,7 @@ CREATE TABLE users (
   avatar_url    TEXT,
   password_hash TEXT              NOT NULL,
   is_seller     BOOLEAN           NOT NULL DEFAULT FALSE,
+  is_admin      BOOLEAN           NOT NULL DEFAULT FALSE,
   is_active     BOOLEAN           NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
@@ -62,6 +63,23 @@ CREATE TABLE shops (
 
 CREATE INDEX idx_shops_owner_id ON shops (owner_id);
 CREATE INDEX idx_shops_slug     ON shops (slug);
+
+-- ============================================================
+--  2b. SHIPPING_PROFILES
+--      Sprzedawca może mieć kilka profili wysyłki (nazwa, cena,
+--      szacowany czas dostawy) i przypisywać je do ofert.
+-- ============================================================
+CREATE TABLE shipping_profiles (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  shop_id       UUID              NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  name          VARCHAR(100)      NOT NULL,
+  price         NUMERIC(10, 2)    NOT NULL DEFAULT 0 CHECK (price >= 0),
+  min_days      INTEGER           NOT NULL CHECK (min_days >= 0),
+  max_days      INTEGER           NOT NULL CHECK (max_days >= min_days),
+  created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_shipping_profiles_shop_id ON shipping_profiles (shop_id);
 
 -- ============================================================
 --  3. CATEGORIES
@@ -93,6 +111,8 @@ CREATE TABLE listings (
   currency      CHAR(3)           NOT NULL DEFAULT 'PLN',
   quantity      INTEGER           NOT NULL DEFAULT 1 CHECK (quantity >= 0),
   is_active     BOOLEAN           NOT NULL DEFAULT TRUE,
+  has_variants  BOOLEAN           NOT NULL DEFAULT FALSE,
+  shipping_profile_id UUID        REFERENCES shipping_profiles(id) ON DELETE SET NULL,
   views_count   INTEGER           NOT NULL DEFAULT 0,
   sales_count   INTEGER           NOT NULL DEFAULT 0,
   avg_rating    NUMERIC(3, 2),
@@ -119,6 +139,43 @@ CREATE TABLE listing_photos (
 );
 
 CREATE INDEX idx_listing_photos_listing_id ON listing_photos (listing_id);
+
+-- ============================================================
+--  5b. LISTING VARIANTS
+--      Do 2 typów wariacji na ofertę (np. Kolor, Rozmiar), każdy z
+--      dowolnymi wartościami; kombinacje mają własną (opcjonalną)
+--      cenę i zawsze własną ilość na stanie.
+-- ============================================================
+CREATE TABLE listing_variant_types (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id    UUID              NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  name          VARCHAR(50)       NOT NULL,
+  position      SMALLINT          NOT NULL CHECK (position IN (1, 2)),
+  UNIQUE (listing_id, position)
+);
+
+CREATE INDEX idx_listing_variant_types_listing_id ON listing_variant_types (listing_id);
+
+CREATE TABLE listing_variant_options (
+  id              UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  variant_type_id UUID              NOT NULL REFERENCES listing_variant_types(id) ON DELETE CASCADE,
+  value           VARCHAR(100)      NOT NULL,
+  sort_order      INTEGER           NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_listing_variant_options_type_id ON listing_variant_options (variant_type_id);
+
+CREATE TABLE listing_variant_skus (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id    UUID              NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  option1_id    UUID              REFERENCES listing_variant_options(id) ON DELETE CASCADE,
+  option2_id    UUID              REFERENCES listing_variant_options(id) ON DELETE CASCADE,
+  price         NUMERIC(10, 2)    CHECK (price IS NULL OR price >= 0),
+  quantity      INTEGER           NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  UNIQUE (listing_id, option1_id, option2_id)
+);
+
+CREATE INDEX idx_listing_variant_skus_listing_id ON listing_variant_skus (listing_id);
 
 -- ============================================================
 --  6. TAGS
@@ -153,6 +210,7 @@ CREATE TABLE orders (
   shop_id         UUID            NOT NULL REFERENCES shops(id) ON DELETE RESTRICT,
   status          order_status    NOT NULL DEFAULT 'pending',
   total_amount    NUMERIC(10, 2)  NOT NULL CHECK (total_amount >= 0),
+  shipping_amount NUMERIC(10, 2)  NOT NULL DEFAULT 0 CHECK (shipping_amount >= 0),
   currency        CHAR(3)         NOT NULL DEFAULT 'PLN',
   shipping_addr   JSONB           NOT NULL,
   note            TEXT,
@@ -175,7 +233,9 @@ CREATE TABLE order_items (
   listing_id    UUID              NOT NULL REFERENCES listings(id) ON DELETE RESTRICT,
   quantity      INTEGER           NOT NULL CHECK (quantity > 0),
   unit_price    NUMERIC(10, 2)    NOT NULL CHECK (unit_price >= 0),
-  title_snapshot VARCHAR(255)     NOT NULL  -- kopia tytułu na chwilę zakupu
+  title_snapshot VARCHAR(255)     NOT NULL, -- kopia tytułu na chwilę zakupu
+  variant_sku_id UUID             REFERENCES listing_variant_skus(id) ON DELETE SET NULL,
+  variant_label_snapshot TEXT     -- np. "Kolor: Czerwony, Rozmiar: L" — zachowane nawet gdy sprzedawca skasuje wariant
 );
 
 CREATE INDEX idx_order_items_order_id   ON order_items (order_id);
@@ -252,6 +312,23 @@ CREATE INDEX idx_messages_receiver_id ON messages (receiver_id);
 CREATE INDEX idx_messages_sent_at     ON messages (sent_at DESC);
 
 -- ============================================================
+--  14. ADMIN_AUDIT_LOG
+--      Historia działań administratorów w panelu
+-- ============================================================
+CREATE TABLE admin_audit_log (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id      UUID              NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action        VARCHAR(50)       NOT NULL,
+  target_type   VARCHAR(50)       NOT NULL,
+  target_id     UUID,
+  details       TEXT,
+  created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_admin_audit_log_admin_id   ON admin_audit_log (admin_id);
+CREATE INDEX idx_admin_audit_log_created_at ON admin_audit_log (created_at DESC);
+
+-- ============================================================
 --  TRIGGER: auto-aktualizacja updated_at
 -- ============================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -294,3 +371,75 @@ COMMENT ON TABLE payments     IS 'Płatności za zamówienia';
 COMMENT ON TABLE reviews      IS 'Opinie wystawiane po dokonaniu zakupu';
 COMMENT ON TABLE favorites    IS 'Zapisane/polubione produkty użytkownika';
 COMMENT ON TABLE messages     IS 'Wiadomości między użytkownikami';
+
+-- ============================================================
+--  MIGRACJA: panel administracyjny (is_admin)
+--  Bezpieczna do wielokrotnego uruchomienia na już istniejącej bazie.
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id      UUID              NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action        VARCHAR(50)       NOT NULL,
+  target_type   VARCHAR(50)       NOT NULL,
+  target_id     UUID,
+  details       TEXT,
+  created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_admin_id   ON admin_audit_log (admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created_at ON admin_audit_log (created_at DESC);
+
+-- ============================================================
+--  MIGRACJA: warianty ofert (kolor/rozmiar itp.)
+-- ============================================================
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS has_variants BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS listing_variant_types (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id    UUID              NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  name          VARCHAR(50)       NOT NULL,
+  position      SMALLINT          NOT NULL CHECK (position IN (1, 2)),
+  UNIQUE (listing_id, position)
+);
+CREATE INDEX IF NOT EXISTS idx_listing_variant_types_listing_id ON listing_variant_types (listing_id);
+
+CREATE TABLE IF NOT EXISTS listing_variant_options (
+  id              UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  variant_type_id UUID              NOT NULL REFERENCES listing_variant_types(id) ON DELETE CASCADE,
+  value           VARCHAR(100)      NOT NULL,
+  sort_order      INTEGER           NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_listing_variant_options_type_id ON listing_variant_options (variant_type_id);
+
+CREATE TABLE IF NOT EXISTS listing_variant_skus (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id    UUID              NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  option1_id    UUID              REFERENCES listing_variant_options(id) ON DELETE CASCADE,
+  option2_id    UUID              REFERENCES listing_variant_options(id) ON DELETE CASCADE,
+  price         NUMERIC(10, 2)    CHECK (price IS NULL OR price >= 0),
+  quantity      INTEGER           NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  UNIQUE (listing_id, option1_id, option2_id)
+);
+CREATE INDEX IF NOT EXISTS idx_listing_variant_skus_listing_id ON listing_variant_skus (listing_id);
+
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_sku_id UUID REFERENCES listing_variant_skus(id) ON DELETE SET NULL;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_label_snapshot TEXT;
+
+-- ============================================================
+--  MIGRACJA: profile wysyłki
+-- ============================================================
+CREATE TABLE IF NOT EXISTS shipping_profiles (
+  id            UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
+  shop_id       UUID              NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  name          VARCHAR(100)      NOT NULL,
+  price         NUMERIC(10, 2)    NOT NULL DEFAULT 0 CHECK (price >= 0),
+  min_days      INTEGER           NOT NULL CHECK (min_days >= 0),
+  max_days      INTEGER           NOT NULL CHECK (max_days >= min_days),
+  created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shipping_profiles_shop_id ON shipping_profiles (shop_id);
+
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS shipping_profile_id UUID REFERENCES shipping_profiles(id) ON DELETE SET NULL;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_amount NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (shipping_amount >= 0);

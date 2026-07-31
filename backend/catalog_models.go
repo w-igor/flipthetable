@@ -20,22 +20,27 @@ type ListingPhoto struct {
 }
 
 type Listing struct {
-	ID           string         `json:"id"`
-	ShopID       string         `json:"shop_id"`
-	ShopName     string         `json:"shop_name"`
-	CategoryID   *string        `json:"category_id,omitempty"`
-	Title        string         `json:"title"`
-	Description  *string        `json:"description,omitempty"`
-	Price        string         `json:"price"`
-	Currency     string         `json:"currency"`
-	Quantity     int            `json:"quantity"`
-	IsActive     bool           `json:"is_active"`
-	ViewsCount   int            `json:"views_count"`
-	SalesCount   int            `json:"sales_count"`
-	AvgRating    *string        `json:"avg_rating,omitempty"`
-	CreatedAt    time.Time      `json:"created_at"`
-	PrimaryPhoto *string        `json:"primary_photo,omitempty"`
-	Photos       []ListingPhoto `json:"photos,omitempty"`
+	ID                string           `json:"id"`
+	ShopID            string           `json:"shop_id"`
+	ShopName          string           `json:"shop_name"`
+	CategoryID        *string          `json:"category_id,omitempty"`
+	Title             string           `json:"title"`
+	Description       *string          `json:"description,omitempty"`
+	Price             string           `json:"price"`
+	Currency          string           `json:"currency"`
+	Quantity          int              `json:"quantity"`
+	IsActive          bool             `json:"is_active"`
+	HasVariants       bool             `json:"has_variants"`
+	ShippingProfileID *string          `json:"shipping_profile_id,omitempty"`
+	Shipping          *ShippingProfile `json:"shipping,omitempty"`
+	ViewsCount        int              `json:"views_count"`
+	SalesCount        int              `json:"sales_count"`
+	AvgRating         *string          `json:"avg_rating,omitempty"`
+	CreatedAt         time.Time        `json:"created_at"`
+	PrimaryPhoto      *string          `json:"primary_photo,omitempty"`
+	Photos            []ListingPhoto   `json:"photos,omitempty"`
+	VariantTypes      []VariantType    `json:"variant_types,omitempty"`
+	VariantSkus       []VariantSku     `json:"variant_skus,omitempty"`
 }
 
 type ListingsResponse struct {
@@ -80,12 +85,13 @@ type SellerStats struct {
 }
 
 type ListingRequest struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	CategoryID  *string  `json:"category_id"`
-	Price       string   `json:"price"`
-	Currency    string   `json:"currency"`
-	Quantity    int      `json:"quantity"`
-	IsActive    *bool    `json:"is_active"`
-	Photos      []string `json:"photos"`
+	Title             string   `json:"title"`
+	Description       string   `json:"description"`
+	CategoryID        *string  `json:"category_id"`
+	Price             string   `json:"price"`
+	Currency          string   `json:"currency"`
+	Quantity          int      `json:"quantity"`
+	IsActive          *bool    `json:"is_active"`
+	Photos            []string `json:"photos"`
+	ShippingProfileID *string  `json:"shipping_profile_id"`
 }

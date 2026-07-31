@@ -310,7 +310,7 @@ func handleGetMyListings(w http.ResponseWriter, r *http.Request) {
 	rows, err := dbPool.Query(ctx, `
 		SELECT
 			l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
-			l.price, l.currency, l.quantity, l.is_active, l.views_count,
+			l.price, l.currency, l.quantity, l.is_active, l.has_variants, l.shipping_profile_id, l.views_count,
 			l.sales_count, l.avg_rating, l.created_at,
 			(SELECT url FROM listing_photos p WHERE p.listing_id = l.id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1)
 		FROM listings l
@@ -330,7 +330,7 @@ func handleGetMyListings(w http.ResponseWriter, r *http.Request) {
 		var l Listing
 		if err := rows.Scan(
 			&l.ID, &l.ShopID, &l.ShopName, &l.CategoryID, &l.Title, &l.Description,
-			&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.ViewsCount,
+			&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.HasVariants, &l.ShippingProfileID, &l.ViewsCount,
 			&l.SalesCount, &l.AvgRating, &l.CreatedAt, &l.PrimaryPhoto,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu ofert")
@@ -338,8 +338,47 @@ func handleGetMyListings(w http.ResponseWriter, r *http.Request) {
 		}
 		items = append(items, l)
 	}
+	for i := range items {
+		attachShipping(ctx, &items[i])
+	}
 
 	writeJSON(w, http.StatusOK, items)
+}
+
+func handleGetMyListingByID(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "Brak autoryzacji")
+		return
+	}
+	id := r.PathValue("id")
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	shopID, err := getOwnShopID(ctx, userID)
+	if err == pgx.ErrNoRows {
+		writeError(w, http.StatusNotFound, "Nie masz jeszcze sklepu")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Błąd serwera")
+		return
+	}
+
+	var owns bool
+	if err := dbPool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM listings WHERE id = $1 AND shop_id = $2)`, id, shopID).Scan(&owns); err != nil || !owns {
+		writeError(w, http.StatusNotFound, "Oferta nie znaleziona w Twoim sklepie")
+		return
+	}
+
+	listing, err := fetchListingByID(ctx, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Nie udało się pobrać oferty")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, listing)
 }
 
 func validateListingRequest(req *ListingRequest) string {
@@ -383,19 +422,20 @@ func fetchListingByID(ctx context.Context, id string) (Listing, error) {
 	var l Listing
 	err := dbPool.QueryRow(ctx, `
 		SELECT l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
-		       l.price, l.currency, l.quantity, l.is_active, l.views_count,
+		       l.price, l.currency, l.quantity, l.is_active, l.has_variants, l.shipping_profile_id, l.views_count,
 		       l.sales_count, l.avg_rating, l.created_at
 		FROM listings l
 		JOIN shops s ON s.id = l.shop_id
 		WHERE l.id = $1
 	`, id).Scan(
 		&l.ID, &l.ShopID, &l.ShopName, &l.CategoryID, &l.Title, &l.Description,
-		&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.ViewsCount,
+		&l.Price, &l.Currency, &l.Quantity, &l.IsActive, &l.HasVariants, &l.ShippingProfileID, &l.ViewsCount,
 		&l.SalesCount, &l.AvgRating, &l.CreatedAt,
 	)
 	if err != nil {
 		return l, err
 	}
+	attachShipping(ctx, &l)
 
 	rows, err := dbPool.Query(ctx, `
 		SELECT id, url, alt_text, is_primary, sort_order
@@ -411,6 +451,11 @@ func fetchListingByID(ctx context.Context, id string) (Listing, error) {
 			}
 		}
 	}
+
+	if l.HasVariants {
+		l.VariantTypes, l.VariantSkus = fetchListingVariants(ctx, id)
+	}
+
 	return l, nil
 }
 
@@ -444,6 +489,11 @@ func handleCreateListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if msg := validateOwnShippingProfile(ctx, shopID, &req.ShippingProfileID); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
+
 	tx, err := dbPool.Begin(ctx)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Błąd bazy danych")
@@ -453,10 +503,10 @@ func handleCreateListing(w http.ResponseWriter, r *http.Request) {
 
 	var listingID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO listings (shop_id, category_id, title, description, price, currency, quantity)
-		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7)
+		INSERT INTO listings (shop_id, category_id, title, description, price, currency, quantity, shipping_profile_id)
+		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7, $8)
 		RETURNING id
-	`, shopID, req.CategoryID, req.Title, req.Description, req.Price, req.Currency, req.Quantity).Scan(&listingID)
+	`, shopID, req.CategoryID, req.Title, req.Description, req.Price, req.Currency, req.Quantity, req.ShippingProfileID).Scan(&listingID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się utworzyć oferty")
 		return
@@ -512,6 +562,11 @@ func handleUpdateListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if msg := validateOwnShippingProfile(ctx, shopID, &req.ShippingProfileID); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
+
 	isActive := true
 	if req.IsActive != nil {
 		isActive = *req.IsActive
@@ -527,9 +582,9 @@ func handleUpdateListing(w http.ResponseWriter, r *http.Request) {
 	tag, err := tx.Exec(ctx, `
 		UPDATE listings
 		SET category_id = $1, title = $2, description = NULLIF($3, ''), price = $4,
-		    currency = $5, quantity = $6, is_active = $7
-		WHERE id = $8 AND shop_id = $9
-	`, req.CategoryID, req.Title, req.Description, req.Price, req.Currency, req.Quantity, isActive, id, shopID)
+		    currency = $5, quantity = $6, is_active = $7, shipping_profile_id = $8
+		WHERE id = $9 AND shop_id = $10
+	`, req.CategoryID, req.Title, req.Description, req.Price, req.Currency, req.Quantity, isActive, req.ShippingProfileID, id, shopID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się zaktualizować oferty")
 		return

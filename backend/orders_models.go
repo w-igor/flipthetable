@@ -12,8 +12,9 @@ type ShippingAddress struct {
 }
 
 type OrderItemRequest struct {
-	ListingID string `json:"listing_id"`
-	Quantity  int    `json:"quantity"`
+	ListingID    string  `json:"listing_id"`
+	VariantSkuID *string `json:"variant_sku_id"`
+	Quantity     int     `json:"quantity"`
 }
 
 type CreateOrderRequest struct {
@@ -28,23 +29,25 @@ type OrderItemView struct {
 	Quantity      int     `json:"quantity"`
 	UnitPrice     string  `json:"unit_price"`
 	TitleSnapshot string  `json:"title_snapshot"`
+	VariantLabel  *string `json:"variant_label,omitempty"`
 	PhotoURL      *string `json:"photo_url,omitempty"`
 	Reviewed      bool    `json:"reviewed"`
 }
 
 type OrderView struct {
-	ID            string          `json:"id"`
-	ShopID        string          `json:"shop_id"`
-	ShopName      string          `json:"shop_name"`
-	BuyerUsername string          `json:"buyer_username,omitempty"`
-	Status        string          `json:"status"`
-	PaymentStatus string          `json:"payment_status,omitempty"`
-	TotalAmount   string          `json:"total_amount"`
-	Currency      string          `json:"currency"`
-	ShippingAddr  ShippingAddress `json:"shipping_addr"`
-	Note          string          `json:"note,omitempty"`
-	Items         []OrderItemView `json:"items,omitempty"`
-	CreatedAt     time.Time       `json:"created_at"`
+	ID             string          `json:"id"`
+	ShopID         string          `json:"shop_id"`
+	ShopName       string          `json:"shop_name"`
+	BuyerUsername  string          `json:"buyer_username,omitempty"`
+	Status         string          `json:"status"`
+	PaymentStatus  string          `json:"payment_status,omitempty"`
+	TotalAmount    string          `json:"total_amount"`
+	ShippingAmount string          `json:"shipping_amount"`
+	Currency       string          `json:"currency"`
+	ShippingAddr   ShippingAddress `json:"shipping_addr"`
+	Note           string          `json:"note,omitempty"`
+	Items          []OrderItemView `json:"items,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
 }
 
 type UpdateOrderStatusRequest struct {

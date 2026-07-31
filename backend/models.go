@@ -9,6 +9,7 @@ type User struct {
 	FullName  *string   `json:"full_name,omitempty"`
 	AvatarURL *string   `json:"avatar_url,omitempty"`
 	IsSeller  bool      `json:"is_seller"`
+	IsAdmin   bool      `json:"is_admin"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 }

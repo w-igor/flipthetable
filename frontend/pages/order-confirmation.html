@@ -173,6 +173,7 @@
             <div class="order-total">
               <span class="payment-status-badge payment-status-${paymentStatus}">${paymentStatusLabels[paymentStatus] || paymentStatus}</span>
               Razem: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}
+              ${parseFloat(order.shipping_amount) > 0 ? ` (w tym wysyłka: ${parseFloat(order.shipping_amount).toFixed(2)} ${order.currency})` : ''}
             </div>
           `;
           container.appendChild(card);

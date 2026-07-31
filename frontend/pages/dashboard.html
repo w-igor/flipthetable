@@ -47,13 +47,17 @@
       </form>
     </div>
 
-    <div id="dashboardMain" style="display:none;">
-      <nav class="dashboard-tabs">
-        <button class="dashboard-tab active" data-tab="shop">Mój sklep</button>
-        <button class="dashboard-tab" data-tab="listings">Moje oferty</button>
-        <button class="dashboard-tab" data-tab="orders">Zamówienia</button>
-      </nav>
+    <div id="dashboardMain" class="dashboard-shell" style="display:none;">
+      <aside class="dashboard-sidebar">
+        <nav class="dashboard-sidebar-nav">
+          <button class="dashboard-tab active" data-tab="shop">Dashboard</button>
+          <button class="dashboard-tab" data-tab="orders">Zamówienia</button>
+          <button class="dashboard-tab" data-tab="listings">Oferty</button>
+          <button class="dashboard-tab" data-tab="shipping">Wysyłka</button>
+        </nav>
+      </aside>
 
+      <div class="dashboard-main">
       <section id="tab-shop" class="dashboard-tab-panel">
         <div class="dashboard-card">
           <h2>Statystyki sklepu</h2>
@@ -106,9 +110,10 @@
               <label for="listingDescription">Opis</label>
               <textarea id="listingDescription" rows="3"></textarea>
             </div>
+            <p id="variantQuantityHint" class="dashboard-hint" style="display:none;">Ta oferta ma warianty — ilość poniżej zostanie zastąpiona sumą sztuk ze wszystkich wariantów po zapisaniu.</p>
             <div class="dashboard-field-row">
               <div class="dashboard-field">
-                <label for="listingPrice">Cena (PLN)</label>
+                <label for="listingPrice">Cena bazowa (PLN)</label>
                 <input type="number" id="listingPrice" min="0" step="0.01" required />
               </div>
               <div class="dashboard-field">
@@ -121,11 +126,42 @@
               <select id="listingCategory"></select>
             </div>
             <div class="dashboard-field">
+              <label for="listingShippingProfile">Profil wysyłki</label>
+              <select id="listingShippingProfile"><option value="">Brak (bez kosztu wysyłki)</option></select>
+            </div>
+            <div class="dashboard-field">
               <label for="listingPhotoFile">Zdjęcie</label>
               <input type="file" id="listingPhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" />
               <input type="hidden" id="listingPhotoUrl" />
               <img id="listingPhotoPreview" class="dashboard-photo-preview" style="display:none;" />
             </div>
+
+            <div class="dashboard-field">
+              <label class="dashboard-checkbox-label">
+                <input type="checkbox" id="listingHasVariants" />
+                Ten produkt ma warianty (np. kolor, rozmiar)
+              </label>
+            </div>
+
+            <div id="variantEditor" style="display:none;">
+              <p class="dashboard-hint">Do 2 typów wariacji (np. Kolor, Rozmiar). Wartości oddzielaj przecinkami.</p>
+              <p id="variantEditorBanner" class="dashboard-banner"></p>
+
+              <div id="variantTypeRows"></div>
+              <button id="addVariantTypeBtn" class="dashboard-cancel-btn dashboard-btn-small" type="button">+ Dodaj typ wariacji</button>
+              <button id="generateCombosBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" style="margin-left:8px;">Generuj kombinacje</button>
+
+              <div class="dashboard-field" style="margin-top:14px;">
+                <label class="dashboard-checkbox-label">
+                  <input type="checkbox" id="variantPricesVary" />
+                  Ceny wariantów się różnią
+                </label>
+                <p class="dashboard-hint" style="margin-top:4px;">Jeśli wyłączone, wszystkie warianty mają cenę bazową oferty.</p>
+              </div>
+
+              <div id="variantCombosWrap" style="margin-top:16px;"></div>
+            </div>
+
             <div class="dashboard-form-actions">
               <button type="submit" class="dashboard-submit-btn" id="listingSubmitBtn">Dodaj ofertę</button>
               <button type="button" class="dashboard-cancel-btn" id="cancelListingBtn">Anuluj</button>
@@ -142,6 +178,45 @@
           <div id="ordersTable" class="dashboard-list"></div>
         </div>
       </section>
+
+      <section id="tab-shipping" class="dashboard-tab-panel" style="display:none;">
+        <div class="dashboard-card">
+          <div class="dashboard-card-header">
+            <h2>Profile wysyłki</h2>
+            <button id="newShippingProfileBtn" class="dashboard-submit-btn dashboard-btn-small" type="button">+ Dodaj profil</button>
+          </div>
+          <p class="dashboard-hint">Możesz mieć kilka profili (np. „Przesyłka kurierska”, „Odbiór osobisty”) i przypisywać je do ofert. Cena i czas dostawy są widoczne dla kupujących.</p>
+
+          <form id="shippingProfileForm" class="dashboard-form" style="display:none;">
+            <input type="hidden" id="shippingProfileId" />
+            <div class="dashboard-field">
+              <label for="shippingProfileName">Nazwa</label>
+              <input type="text" id="shippingProfileName" required />
+            </div>
+            <div class="dashboard-field-row">
+              <div class="dashboard-field">
+                <label for="shippingProfilePrice">Cena (PLN)</label>
+                <input type="number" id="shippingProfilePrice" min="0" step="0.01" required />
+              </div>
+              <div class="dashboard-field">
+                <label for="shippingProfileMinDays">Min. dni dostawy</label>
+                <input type="number" id="shippingProfileMinDays" min="0" step="1" required />
+              </div>
+              <div class="dashboard-field">
+                <label for="shippingProfileMaxDays">Maks. dni dostawy</label>
+                <input type="number" id="shippingProfileMaxDays" min="0" step="1" required />
+              </div>
+            </div>
+            <div class="dashboard-form-actions">
+              <button type="submit" class="dashboard-submit-btn" id="shippingProfileSubmitBtn">Dodaj profil</button>
+              <button type="button" class="dashboard-cancel-btn" id="cancelShippingProfileBtn">Anuluj</button>
+            </div>
+          </form>
+
+          <div id="shippingProfilesTable" class="dashboard-list"></div>
+        </div>
+      </section>
+      </div>
     </div>
   </div>
 

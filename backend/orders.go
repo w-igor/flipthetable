@@ -10,11 +10,43 @@ import (
 )
 
 type listingLine struct {
-	ShopID      string
-	ShopOwnerID string
-	Price       string
-	Quantity    int
-	Title       string
+	ShopID        string
+	ShopOwnerID   string
+	Price         string
+	Quantity      int
+	Title         string
+	HasVariants   bool
+	ShippingPrice *string
+}
+
+type resolvedOrderItem struct {
+	ListingID    string
+	ShopID       string
+	VariantSkuID *string
+	VariantLabel *string
+	UnitPrice    float64
+	Quantity     int
+	Title        string
+}
+
+// lockVariantSku locks and reads a single variant combination row for an update-in-progress
+// order, along with a human-readable label built from its type/option names.
+func lockVariantSku(ctx context.Context, tx pgx.Tx, skuID, listingID string) (price *string, quantity int, label string, err error) {
+	var t1Name, o1Value, t2Name, o2Value *string
+	err = tx.QueryRow(ctx, `
+		SELECT s.price, s.quantity, t1.name, o1.value, t2.name, o2.value
+		FROM listing_variant_skus s
+		LEFT JOIN listing_variant_options o1 ON o1.id = s.option1_id
+		LEFT JOIN listing_variant_types t1 ON t1.id = o1.variant_type_id
+		LEFT JOIN listing_variant_options o2 ON o2.id = s.option2_id
+		LEFT JOIN listing_variant_types t2 ON t2.id = o2.variant_type_id
+		WHERE s.id = $1 AND s.listing_id = $2
+		FOR UPDATE OF s
+	`, skuID, listingID).Scan(&price, &quantity, &t1Name, &o1Value, &t2Name, &o2Value)
+	if err != nil {
+		return nil, 0, "", err
+	}
+	return price, quantity, variantLabel(t1Name, o1Value, t2Name, o2Value), nil
 }
 
 func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -61,9 +93,10 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := tx.Query(ctx, `
-		SELECT l.id, l.shop_id, s.owner_id, l.price, l.quantity, l.title
+		SELECT l.id, l.shop_id, s.owner_id, l.price, l.quantity, l.title, l.has_variants, sp.price
 		FROM listings l
 		JOIN shops s ON s.id = l.shop_id
+		LEFT JOIN shipping_profiles sp ON sp.id = l.shipping_profile_id
 		WHERE l.id = ANY($1::uuid[]) AND l.is_active = TRUE
 		FOR UPDATE OF l
 	`, listingIDs)
@@ -76,7 +109,7 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var id string
 		var l listingLine
-		if err := rows.Scan(&id, &l.ShopID, &l.ShopOwnerID, &l.Price, &l.Quantity, &l.Title); err != nil {
+		if err := rows.Scan(&id, &l.ShopID, &l.ShopOwnerID, &l.Price, &l.Quantity, &l.Title, &l.HasVariants, &l.ShippingPrice); err != nil {
 			rows.Close()
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu produktów")
 			return
@@ -85,7 +118,8 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	rows.Close()
 
-	shopGroups := map[string][]OrderItemRequest{}
+	shopShippingMax := map[string]float64{}
+	shopGroups := map[string][]resolvedOrderItem{}
 	for _, item := range req.Items {
 		l, found := listings[item.ListingID]
 		if !found {
@@ -96,11 +130,55 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Nie możesz kupić własnej oferty \""+l.Title+"\"")
 			return
 		}
-		if l.Quantity < item.Quantity {
-			writeError(w, http.StatusConflict, "Za mało sztuk produktu \""+l.Title+"\" na stanie")
-			return
+
+		resolved := resolvedOrderItem{
+			ListingID: item.ListingID,
+			ShopID:    l.ShopID,
+			Quantity:  item.Quantity,
+			Title:     l.Title,
 		}
-		shopGroups[l.ShopID] = append(shopGroups[l.ShopID], item)
+
+		if l.HasVariants {
+			if item.VariantSkuID == nil || *item.VariantSkuID == "" {
+				writeError(w, http.StatusBadRequest, "Wybierz wariant produktu \""+l.Title+"\"")
+				return
+			}
+			skuPrice, skuQuantity, label, err := lockVariantSku(ctx, tx, *item.VariantSkuID, item.ListingID)
+			if err == pgx.ErrNoRows {
+				writeError(w, http.StatusBadRequest, "Wybrany wariant produktu \""+l.Title+"\" już nie istnieje")
+				return
+			}
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Nie udało się zweryfikować wariantu")
+				return
+			}
+			if skuQuantity < item.Quantity {
+				writeError(w, http.StatusConflict, "Za mało sztuk wariantu produktu \""+l.Title+"\" na stanie")
+				return
+			}
+			price := l.Price
+			if skuPrice != nil {
+				price = *skuPrice
+			}
+			resolved.UnitPrice = parsePriceOrZero(price)
+			resolved.VariantSkuID = item.VariantSkuID
+			resolved.VariantLabel = &label
+		} else {
+			if l.Quantity < item.Quantity {
+				writeError(w, http.StatusConflict, "Za mało sztuk produktu \""+l.Title+"\" na stanie")
+				return
+			}
+			resolved.UnitPrice = parsePriceOrZero(l.Price)
+		}
+
+		if l.ShippingPrice != nil {
+			price := parsePriceOrZero(*l.ShippingPrice)
+			if price > shopShippingMax[l.ShopID] {
+				shopShippingMax[l.ShopID] = price
+			}
+		}
+
+		shopGroups[l.ShopID] = append(shopGroups[l.ShopID], resolved)
 	}
 
 	shippingJSON, err := json.Marshal(req.ShippingAddr)
@@ -112,20 +190,21 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	createdOrders := []OrderView{}
 
 	for shopID, items := range shopGroups {
-		var total float64
+		var itemsTotal float64
 		for _, item := range items {
-			l := listings[item.ListingID]
-			total += parsePriceOrZero(l.Price) * float64(item.Quantity)
+			itemsTotal += item.UnitPrice * float64(item.Quantity)
 		}
+		shippingAmount := shopShippingMax[shopID]
+		total := itemsTotal + shippingAmount
 
 		var orderID string
 		var createdAt time.Time
 		var shopName string
 		err := tx.QueryRow(ctx, `
-			INSERT INTO orders (buyer_id, shop_id, total_amount, shipping_addr, note)
-			VALUES ($1, $2, $3, $4::jsonb, $5)
+			INSERT INTO orders (buyer_id, shop_id, total_amount, shipping_amount, shipping_addr, note)
+			VALUES ($1, $2, $3, $4, $5::jsonb, $6)
 			RETURNING id, created_at
-		`, userID, shopID, total, string(shippingJSON), req.Note).Scan(&orderID, &createdAt)
+		`, userID, shopID, total, shippingAmount, string(shippingJSON), req.Note).Scan(&orderID, &createdAt)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Nie udało się utworzyć zamówienia")
 			return
@@ -142,18 +221,24 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 
 		orderItems := make([]OrderItemView, 0, len(items))
 		for _, item := range items {
-			l := listings[item.ListingID]
+			unitPrice := formatPrice(item.UnitPrice)
 			var itemID string
 			err := tx.QueryRow(ctx, `
-				INSERT INTO order_items (order_id, listing_id, quantity, unit_price, title_snapshot)
-				VALUES ($1, $2, $3, $4, $5)
+				INSERT INTO order_items (order_id, listing_id, quantity, unit_price, title_snapshot, variant_sku_id, variant_label_snapshot)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
 				RETURNING id
-			`, orderID, item.ListingID, item.Quantity, l.Price, l.Title).Scan(&itemID)
+			`, orderID, item.ListingID, item.Quantity, unitPrice, item.Title, item.VariantSkuID, item.VariantLabel).Scan(&itemID)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, "Nie udało się utworzyć pozycji zamówienia")
 				return
 			}
 
+			if item.VariantSkuID != nil {
+				if _, err := tx.Exec(ctx, `UPDATE listing_variant_skus SET quantity = quantity - $1 WHERE id = $2`, item.Quantity, *item.VariantSkuID); err != nil {
+					writeError(w, http.StatusInternalServerError, "Nie udało się zaktualizować stanu magazynowego wariantu")
+					return
+				}
+			}
 			if _, err := tx.Exec(ctx, `UPDATE listings SET quantity = quantity - $1, sales_count = sales_count + $1 WHERE id = $2`, item.Quantity, item.ListingID); err != nil {
 				writeError(w, http.StatusInternalServerError, "Nie udało się zaktualizować stanu magazynowego")
 				return
@@ -163,23 +248,25 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 				ID:            itemID,
 				ListingID:     item.ListingID,
 				Quantity:      item.Quantity,
-				UnitPrice:     l.Price,
-				TitleSnapshot: l.Title,
+				UnitPrice:     unitPrice,
+				TitleSnapshot: item.Title,
+				VariantLabel:  item.VariantLabel,
 			})
 		}
 
 		createdOrders = append(createdOrders, OrderView{
-			ID:            orderID,
-			ShopID:        shopID,
-			ShopName:      shopName,
-			Status:        "pending",
-			PaymentStatus: "pending",
-			TotalAmount:   formatPrice(total),
-			Currency:      "PLN",
-			ShippingAddr:  req.ShippingAddr,
-			Note:          req.Note,
-			Items:         orderItems,
-			CreatedAt:     createdAt,
+			ID:             orderID,
+			ShopID:         shopID,
+			ShopName:       shopName,
+			Status:         "pending",
+			PaymentStatus:  "pending",
+			TotalAmount:    formatPrice(total),
+			ShippingAmount: formatPrice(shippingAmount),
+			Currency:       "PLN",
+			ShippingAddr:   req.ShippingAddr,
+			Note:           req.Note,
+			Items:          orderItems,
+			CreatedAt:      createdAt,
 		})
 	}
 
@@ -194,7 +281,7 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 func fetchOrderItems(ctx context.Context, orderID string) []OrderItemView {
 	items := []OrderItemView{}
 	itemRows, err := dbPool.Query(ctx, `
-		SELECT oi.id, oi.listing_id, oi.quantity, oi.unit_price, oi.title_snapshot,
+		SELECT oi.id, oi.listing_id, oi.quantity, oi.unit_price, oi.title_snapshot, oi.variant_label_snapshot,
 		       (SELECT url FROM listing_photos p WHERE p.listing_id = oi.listing_id ORDER BY p.is_primary DESC, p.sort_order LIMIT 1),
 		       EXISTS(SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
 		FROM order_items oi
@@ -206,7 +293,7 @@ func fetchOrderItems(ctx context.Context, orderID string) []OrderItemView {
 	defer itemRows.Close()
 	for itemRows.Next() {
 		var item OrderItemView
-		if itemRows.Scan(&item.ID, &item.ListingID, &item.Quantity, &item.UnitPrice, &item.TitleSnapshot, &item.PhotoURL, &item.Reviewed) == nil {
+		if itemRows.Scan(&item.ID, &item.ListingID, &item.Quantity, &item.UnitPrice, &item.TitleSnapshot, &item.VariantLabel, &item.PhotoURL, &item.Reviewed) == nil {
 			items = append(items, item)
 		}
 	}
@@ -224,7 +311,7 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	rows, err := dbPool.Query(ctx, `
-		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.currency,
+		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.shipping_amount, o.currency,
 		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
@@ -244,7 +331,7 @@ func handleListOrders(w http.ResponseWriter, r *http.Request) {
 		var shippingRaw []byte
 		var note *string
 		var paymentStatus *string
-		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
+		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.ShippingAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu zamówień")
 			return
 		}
@@ -310,13 +397,13 @@ func handleGetOrder(w http.ResponseWriter, r *http.Request) {
 	var note *string
 	var paymentStatus *string
 	err := dbPool.QueryRow(ctx, `
-		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.currency,
+		SELECT o.id, o.shop_id, s.name, o.status, o.total_amount, o.shipping_amount, o.currency,
 		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
 		LEFT JOIN payments p ON p.order_id = o.id
 		WHERE o.id = $1 AND o.buyer_id = $2
-	`, id, userID).Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus)
+	`, id, userID).Scan(&o.ID, &o.ShopID, &o.ShopName, &o.Status, &o.TotalAmount, &o.ShippingAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus)
 
 	if err == pgx.ErrNoRows {
 		writeError(w, http.StatusNotFound, "Zamówienie nie znalezione")
@@ -360,7 +447,7 @@ func handleListSellerOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := dbPool.Query(ctx, `
-		SELECT o.id, o.shop_id, s.name, u.username, o.status, o.total_amount, o.currency,
+		SELECT o.id, o.shop_id, s.name, u.username, o.status, o.total_amount, o.shipping_amount, o.currency,
 		       o.shipping_addr, o.note, o.created_at, p.status
 		FROM orders o
 		JOIN shops s ON s.id = o.shop_id
@@ -381,7 +468,7 @@ func handleListSellerOrders(w http.ResponseWriter, r *http.Request) {
 		var shippingRaw []byte
 		var note *string
 		var paymentStatus *string
-		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.BuyerUsername, &o.Status, &o.TotalAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
+		if err := rows.Scan(&o.ID, &o.ShopID, &o.ShopName, &o.BuyerUsername, &o.Status, &o.TotalAmount, &o.ShippingAmount, &o.Currency, &shippingRaw, &note, &o.CreatedAt, &paymentStatus); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd odczytu zamówień")
 			return
 		}

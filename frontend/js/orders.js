@@ -101,6 +101,7 @@ function renderOrders(orders) {
               : ''
           }
           <p class="order-card-total">${parseFloat(order.total_amount).toFixed(2)} ${order.currency}</p>
+          ${parseFloat(order.shipping_amount) > 0 ? `<p class="order-card-shipping">w tym wysyłka: ${parseFloat(order.shipping_amount).toFixed(2)} ${order.currency}</p>` : ''}
         </div>
       </div>
       ${renderPaymentRetry(order)}

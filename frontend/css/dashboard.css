@@ -1,5 +1,5 @@
 .dashboard-layout {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 32px 24px 64px;
 }
@@ -63,27 +63,65 @@
   margin: 0;
 }
 
-.dashboard-tabs {
+.dashboard-shell {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--etsy-border);
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.dashboard-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+}
+
+.dashboard-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .dashboard-tab {
   border: none;
   background: none;
-  padding: 10px 16px;
+  padding: 11px 14px;
   font-size: 14px;
   font-weight: 600;
   color: var(--etsy-gray);
   cursor: pointer;
-  border-bottom: 3px solid transparent;
+  text-align: left;
+  border-radius: var(--radius);
+  border-left: 3px solid transparent;
+}
+
+.dashboard-tab:hover {
+  background: var(--etsy-bg);
 }
 
 .dashboard-tab.active {
   color: var(--etsy-black);
-  border-bottom-color: var(--etsy-orange);
+  background: var(--etsy-bg);
+  border-left-color: var(--etsy-orange);
+}
+
+@media (max-width: 780px) {
+  .dashboard-shell {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    position: static;
+  }
+  .dashboard-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 .dashboard-form {
@@ -250,6 +288,55 @@
   margin: 0;
   font-size: 12px;
   color: var(--etsy-gray);
+}
+
+.dashboard-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dashboard-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.variant-type-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.variant-type-row .dashboard-field {
+  flex: 1;
+  min-width: 160px;
+}
+
+.variant-combo-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.variant-combo-table th,
+.variant-combo-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--etsy-border);
+  text-align: left;
+  font-size: 13px;
+}
+
+.variant-combo-table input {
+  width: 100px;
+  padding: 6px 8px;
+  border: 1px solid var(--etsy-border);
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 .dashboard-empty {

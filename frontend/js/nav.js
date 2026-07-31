@@ -34,11 +34,15 @@ function updateHeaderForAuth() {
   if (!user) return;
 
   const dashboardLabel = user.is_seller ? 'Panel sprzedawcy' : 'Zostań sprzedawcą';
+  const adminLink = user.is_admin
+    ? `<a href="admin.html" class="nav-icon-link" title="Panel administratora" aria-label="Panel administratora">Admin</a>`
+    : '';
   authActions.innerHTML = `
     <a href="favorites.html" class="nav-icon-link" title="Ulubione" aria-label="Ulubione">${Icons.heart}</a>
     <a href="messages.html" class="nav-icon-link" title="Wiadomości" aria-label="Wiadomości">${Icons.messageCircle}<span id="navUnreadBadge" class="nav-unread-badge" style="display:none;"></span></a>
     <a href="orders.html" class="nav-icon-link" title="Moje zamówienia" aria-label="Moje zamówienia">${Icons.package}</a>
     <a href="dashboard.html" class="nav-icon-link" title="${dashboardLabel}" aria-label="${dashboardLabel}">${Icons.store}</a>
+    ${adminLink}
     <span class="nav-user-chip" title="${escapeHtml(user.username)}">${Icons.userRound}<span class="nav-username">${escapeHtml(user.username)}</span></span>
     <a href="#" id="logoutLink" class="nav-icon-link" title="Wyloguj" aria-label="Wyloguj">${Icons.logOut}</a>
   `;

@@ -87,6 +87,12 @@
   font-weight: 700;
 }
 
+.order-card-shipping {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
 .order-status-badge {
   display: inline-block;
   padding: 4px 10px;
