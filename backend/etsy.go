@@ -25,16 +25,20 @@ const (
 
 var errEtsyNotConfigured = errors.New("Klucz API Etsy nie jest jeszcze skonfigurowany")
 
+// etsyMoney represents a monetary amount in Etsy's format (amount divided by divisor).
+// E.g., amount=1999, divisor=100 = 19.99 USD
 type etsyMoney struct {
 	Amount       int    `json:"amount"`
 	Divisor      int    `json:"divisor"`
 	CurrencyCode string `json:"currency_code"`
 }
 
+// etsyImage represents a product image from Etsy.
 type etsyImage struct {
 	URLFullxfull string `json:"url_fullxfull"`
 }
 
+// etsyListing represents a product listing fetched from Etsy's API.
 type etsyListing struct {
 	ListingID   int64       `json:"listing_id"`
 	ShopID      int64       `json:"shop_id"`
@@ -46,21 +50,24 @@ type etsyListing struct {
 	Images      []etsyImage `json:"images"`
 }
 
+// etsyListingsPage represents a paginated response of listings from Etsy's API.
 type etsyListingsPage struct {
 	Count   int           `json:"count"`
 	Results []etsyListing `json:"results"`
 }
 
+// etsyAPIKey retrieves the Etsy API key from environment, trimming whitespace.
 func etsyAPIKey() string {
 	return strings.TrimSpace(os.Getenv("ETSY_API_KEY"))
 }
 
+// etsySharedSecret retrieves the Etsy API shared secret from environment, trimming whitespace.
 func etsySharedSecret() string {
 	return strings.TrimSpace(os.Getenv("ETSY_SHARED_SECRET"))
 }
 
-// etsyAuthHeader builds the x-api-key header value. Etsy requires the shared
-// secret to be appended as "keystring:shared_secret" as of Feb 9 2026.
+// etsyAuthHeader builds the x-api-key header value for Etsy API requests.
+// Format is "apikey:sharedsecret" if both are configured, otherwise just the API key.
 func etsyAuthHeader() string {
 	apiKey := etsyAPIKey()
 	if secret := etsySharedSecret(); secret != "" {
@@ -69,11 +76,14 @@ func etsyAuthHeader() string {
 	return apiKey
 }
 
+// etsyGet performs an authenticated GET request to the Etsy API and decodes the JSON response.
+// Returns errEtsyNotConfigured if the API key is not set.
 func etsyGet(ctx context.Context, path string, query url.Values, out interface{}) error {
 	if etsyAPIKey() == "" {
 		return errEtsyNotConfigured
 	}
 
+	// Build full URL with query parameters
 	fullURL := etsyAPIBase + path
 	if len(query) > 0 {
 		fullURL += "?" + query.Encode()

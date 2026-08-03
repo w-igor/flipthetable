@@ -8,6 +8,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// main initializes the application server, establishes database connection,
+// runs migrations, and sets up all HTTP routes before starting the server.
 func main() {
 	if err := godotenv.Load("../.env"); err != nil {
 		if err2 := godotenv.Load(".env"); err2 != nil {
@@ -28,14 +30,18 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	// Authentication routes: register, login, refresh tokens, and get current user info
 	mux.HandleFunc("POST /auth/register", handleRegister)
 	mux.HandleFunc("POST /auth/login", handleLogin)
 	mux.HandleFunc("POST /auth/refresh", handleRefresh)
 	mux.HandleFunc("GET /auth/me", requireAuth(handleMe))
 
+	// Public listing discovery routes: browse categories and search/filter listings
 	mux.HandleFunc("GET /categories", handleGetCategories)
 	mux.HandleFunc("GET /listings", handleGetListings)
 	mux.HandleFunc("GET /listings/{id}", handleGetListing)
+	// Listing management: create, update, delete, and manage product variants
 	mux.HandleFunc("POST /listings", requireAuth(handleCreateListing))
 	mux.HandleFunc("PUT /listings/{id}", requireAuth(handleUpdateListing))
 	mux.HandleFunc("DELETE /listings/{id}", requireAuth(handleDeleteListing))
@@ -43,11 +49,13 @@ func main() {
 	mux.HandleFunc("GET /listings/{id}/reviews", handleGetListingReviews)
 	mux.HandleFunc("POST /reviews", requireAuth(handleCreateReview))
 
+	// Shop management: create and manage seller shops
 	mux.HandleFunc("POST /shops", requireAuth(handleCreateShop))
 	mux.HandleFunc("GET /shops/me", requireAuth(handleGetMyShop))
 	mux.HandleFunc("PUT /shops/me", requireAuth(handleUpdateShop))
 	mux.HandleFunc("GET /shops/{id}", handleGetShopPublic)
 
+	// Seller dashboard: manage own listings, shipping profiles, orders, and Etsy integration
 	mux.HandleFunc("GET /seller/listings", requireAuth(handleGetMyListings))
 	mux.HandleFunc("GET /seller/listings/{id}", requireAuth(handleGetMyListingByID))
 	mux.HandleFunc("GET /seller/shipping-profiles", requireAuth(handleListShippingProfiles))
@@ -57,32 +65,38 @@ func main() {
 	mux.HandleFunc("GET /seller/stats", requireAuth(handleGetSellerStats))
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
+	// Etsy sync and OAuth: connect Etsy shop and sync listings
 	mux.HandleFunc("GET /seller/etsy/status", requireAuth(handleEtsyStatus))
 	mux.HandleFunc("DELETE /seller/etsy/connection", requireAuth(handleEtsyDisconnect))
 	mux.HandleFunc("POST /seller/etsy/import", requireAuth(handleEtsyImport))
 	mux.HandleFunc("GET /seller/etsy/oauth/start", requireAuth(handleEtsyOAuthStart))
 	mux.HandleFunc("GET /seller/etsy/oauth/callback", handleEtsyOAuthCallback)
 
+	// Messaging and real-time updates: send messages and WebSocket push notifications
 	mux.HandleFunc("POST /messages", requireAuth(handleSendMessage))
 	mux.HandleFunc("GET /messages/conversations", requireAuth(handleListConversations))
 	mux.HandleFunc("GET /messages/unread-count", requireAuth(handleUnreadMessageCount))
 	mux.HandleFunc("GET /messages/with/{userId}", requireAuth(handleGetThread))
 	mux.HandleFunc("GET /ws", handleWS)
 
+	// Wishlist/favorites: add and remove favorite listings
 	mux.HandleFunc("GET /favorites", requireAuth(handleListFavorites))
 	mux.HandleFunc("GET /favorites/ids", requireAuth(handleListFavoriteIDs))
 	mux.HandleFunc("POST /favorites", requireAuth(handleAddFavorite))
 	mux.HandleFunc("DELETE /favorites/{listingId}", requireAuth(handleRemoveFavorite))
 
+	// Photo uploads: upload and serve product images
 	mux.HandleFunc("POST /uploads", requireAuth(handleUploadPhoto))
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
 
+	// Buyer orders: create orders, view purchase history, and make payments
 	mux.HandleFunc("POST /orders", requireAuth(handleCreateOrder))
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))
 	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
 	mux.HandleFunc("GET /orders/{id}", requireAuth(handleGetOrder))
 	mux.HandleFunc("POST /orders/{id}/pay", requireAuth(handlePayOrder))
 
+	// Admin panel: manage users, shops, listings, orders, categories, and audit logs
 	mux.HandleFunc("GET /admin/stats", requireAdmin(handleAdminStats))
 	mux.HandleFunc("GET /admin/users", requireAdmin(handleAdminListUsers))
 	mux.HandleFunc("PUT /admin/users/{id}/status", requireAdmin(handleAdminSetUserActive))

@@ -14,11 +14,15 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// polishDiacritics is a string replacer that removes Polish accents and diacritical marks
+// for use in URL-safe shop slug generation.
 var polishDiacritics = strings.NewReplacer(
 	"ą", "a", "ć", "c", "ę", "e", "ł", "l", "ń", "n",
 	"ó", "o", "ś", "s", "ź", "z", "ż", "z",
 )
 
+// slugify converts a shop name into a URL-safe slug by removing accents,
+// converting to lowercase, and replacing non-alphanumeric characters with dashes.
 func slugify(name string) string {
 	s := polishDiacritics.Replace(strings.ToLower(name))
 
@@ -37,13 +41,17 @@ func slugify(name string) string {
 	return strings.Trim(b.String(), "-")
 }
 
-// getOwnShopID looks up the shop owned by the current user. Returns pgx.ErrNoRows if they don't have one yet.
+// getOwnShopID retrieves the shop ID owned by the given user.
+// Returns pgx.ErrNoRows if the user hasn't created a shop yet.
 func getOwnShopID(ctx context.Context, userID string) (string, error) {
 	var shopID string
 	err := dbPool.QueryRow(ctx, `SELECT id FROM shops WHERE owner_id = $1`, userID).Scan(&shopID)
 	return shopID, err
 }
 
+// handleCreateShop creates a new seller shop for the authenticated user.
+// Generates a URL-safe slug from the shop name and validates uniqueness.
+// Each user can only own one shop.
 func handleCreateShop(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {

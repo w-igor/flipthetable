@@ -9,7 +9,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// A buyer can only review a purchase once the shop has actually confirmed/handled it.
+// reviewableOrderStatuses defines which order states allow buyers to submit reviews.
+// Prevents reviews until the order has been confirmed and shipped.
 var reviewableOrderStatuses = map[string]bool{
 	"paid":       true,
 	"processing": true,
@@ -17,6 +18,8 @@ var reviewableOrderStatuses = map[string]bool{
 	"delivered":  true,
 }
 
+// handleCreateReview allows a buyer to submit a 1-5 star review for a purchased item.
+// Updates the listing's average rating. One review per order item.
 func handleCreateReview(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {

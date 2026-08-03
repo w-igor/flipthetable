@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// fetchListingVariants loads the variant types (with their options) and the
-// sku combinations for a listing. Best-effort: on query failure it returns
-// empty slices rather than failing the whole listing response.
+// fetchListingVariants loads the variant types (e.g., Size, Color) with their options (e.g., S, M, L)
+// and all SKU (Stock Keeping Unit) combinations for a listing with their prices and quantities.
+// Uses best-effort error handling: on query failure returns empty slices rather than failing the response.
 func fetchListingVariants(ctx context.Context, listingID string) ([]VariantType, []VariantSku) {
 	types := []VariantType{}
 	typeRows, err := dbPool.Query(ctx, `
@@ -75,6 +75,8 @@ func fetchListingVariants(ctx context.Context, listingID string) ([]VariantType,
 	return types, skus
 }
 
+// variantLabel builds a human-readable label from variant type names and option values.
+// E.g., "Size: M, Color: Red" from the two variant dimensions.
 func variantLabel(t1Name, o1Value, t2Name, o2Value *string) string {
 	parts := []string{}
 	if t1Name != nil && o1Value != nil {
@@ -86,6 +88,9 @@ func variantLabel(t1Name, o1Value, t2Name, o2Value *string) string {
 	return strings.Join(parts, ", ")
 }
 
+// handleReplaceListingVariants replaces all variants (size/color combos) for a listing.
+// Validates variant structure, removes duplicates, and ensures seller owns the listing.
+// Supports up to 2 variant types with multiple options each, generating SKUs (combinations) with prices.
 func handleReplaceListingVariants(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -100,16 +105,19 @@ func handleReplaceListingVariants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate: max 2 variant types (e.g., Size and Color)
 	if len(req.Types) > 2 {
 		writeError(w, http.StatusBadRequest, "Można dodać maksymalnie 2 typy wariacji")
 		return
 	}
+	// Validate and clean variant types
 	for i := range req.Types {
 		req.Types[i].Name = strings.TrimSpace(req.Types[i].Name)
 		if req.Types[i].Name == "" {
 			writeError(w, http.StatusBadRequest, "Nazwa typu wariacji nie może być pusta")
 			return
 		}
+		// Remove duplicate and empty option values
 		seen := map[string]bool{}
 		cleaned := make([]string, 0, len(req.Types[i].Options))
 		for _, v := range req.Types[i].Options {
@@ -126,7 +134,9 @@ func handleReplaceListingVariants(w http.ResponseWriter, r *http.Request) {
 		}
 		req.Types[i].Options = cleaned
 	}
+	// Validate SKU combinations
 	for i := range req.Skus {
+		// Each SKU must have one value per variant type
 		if len(req.Skus[i].OptionValues) != len(req.Types) {
 			writeError(w, http.StatusBadRequest, "Każda kombinacja musi mieć wartość dla każdego typu wariacji")
 			return
@@ -135,6 +145,7 @@ func handleReplaceListingVariants(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Ilość nie może być ujemna")
 			return
 		}
+		// Validate price format if provided (variant can override base listing price)
 		if req.Skus[i].Price != nil {
 			if _, err := strconv.ParseFloat(*req.Skus[i].Price, 64); err != nil {
 				writeError(w, http.StatusBadRequest, "Nieprawidłowa cena wariantu")
@@ -142,6 +153,7 @@ func handleReplaceListingVariants(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// Prevent adding SKUs without any variant types
 	if len(req.Types) == 0 && len(req.Skus) > 0 {
 		writeError(w, http.StatusBadRequest, "Nie można dodać kombinacji bez typów wariacji")
 		return

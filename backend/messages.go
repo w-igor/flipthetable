@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// handleSendMessage creates a direct message from sender to receiver (buyer-to-seller, seller-to-buyer).
+// Validates recipient exists, then broadcasts the message to the receiver's WebSocket connections.
 func handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -21,10 +23,12 @@ func handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.Body = strings.TrimSpace(req.Body)
+	// Validate required fields
 	if req.ReceiverID == "" || req.Body == "" {
 		writeError(w, http.StatusBadRequest, "Wiadomość nie może być pusta")
 		return
 	}
+	// Prevent users from messaging themselves
 	if req.ReceiverID == userID {
 		writeError(w, http.StatusBadRequest, "Nie możesz wysłać wiadomości do samego siebie")
 		return
@@ -65,6 +69,8 @@ func handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, msg)
 }
 
+// handleListConversations returns a list of all message conversations for the authenticated user,
+// showing the most recent message from each conversation partner and unread count.
 func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -75,6 +81,8 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Query retrieves unique conversation partners and their latest message.
+	// Uses window functions to find the most recent message per partner.
 	rows, err := dbPool.Query(ctx, `
 		WITH convo AS (
 			SELECT

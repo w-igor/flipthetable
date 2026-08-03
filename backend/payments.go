@@ -12,10 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// declinedTestCard to symulowany "test card" znany z bramek typu Stripe —
-// pozwala łatwo przetestować ścieżkę nieudanej płatności bez prawdziwego providera.
+// declinedTestCard is a test card number that simulates a payment failure,
+// allowing easy testing of the payment decline flow without a real payment provider.
 const declinedTestCard = "4000000000000002"
 
+// insertPendingPayment creates a new payment record with "pending" status in a transaction.
 func insertPendingPayment(ctx context.Context, tx pgx.Tx, orderID string, amount float64, currency string) error {
 	_, err := tx.Exec(ctx, `
 		INSERT INTO payments (order_id, provider, status, amount, currency)
@@ -24,12 +25,15 @@ func insertPendingPayment(ctx context.Context, tx pgx.Tx, orderID string, amount
 	return err
 }
 
+// generateTxID creates a random transaction ID for payment records.
 func generateTxID() string {
 	b := make([]byte, 8)
 	rand.Read(b)
 	return "tx_" + hex.EncodeToString(b)
 }
 
+// luhnValid performs Luhn algorithm validation on a credit card number.
+// This is a basic check to catch typos before sending to a payment provider.
 func luhnValid(number string) bool {
 	sum := 0
 	alt := false
@@ -51,6 +55,9 @@ func luhnValid(number string) bool {
 	return sum%10 == 0
 }
 
+// handlePayOrder processes a payment attempt for a pending order.
+// Validates card details, checks order ownership and status, then marks payment as completed or failed.
+// The test card (4000000000000002) always fails; all others succeed.
 func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -65,15 +72,18 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate card number format and Luhn checksum
 	cardNumber := strings.ReplaceAll(req.CardNumber, " ", "")
 	if len(cardNumber) < 13 || len(cardNumber) > 19 || !luhnValid(cardNumber) {
 		writeError(w, http.StatusBadRequest, "Nieprawidłowy numer karty")
 		return
 	}
+	// Validate CVC (usually 3 or 4 digits)
 	if len(req.CVC) < 3 || len(req.CVC) > 4 {
 		writeError(w, http.StatusBadRequest, "Nieprawidłowy kod CVC")
 		return
 	}
+	// Check if card expiration date is in the future
 	now := time.Now()
 	if req.ExpYear < now.Year() || (req.ExpYear == now.Year() && req.ExpMonth < int(now.Month())) {
 		writeError(w, http.StatusBadRequest, "Karta wygasła")
@@ -83,6 +93,7 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
+	// Start a database transaction to ensure atomicity of payment + order status updates
 	tx, err := dbPool.Begin(ctx)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Błąd bazy danych")
@@ -90,6 +101,7 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 
+	// Fetch order and payment details with row-level lock to prevent concurrent payment attempts
 	var buyerID, orderStatus string
 	var paymentID, paymentStatus, amount string
 	err = tx.QueryRow(ctx, `
@@ -107,19 +119,24 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Błąd serwera")
 		return
 	}
+
+	// Verify the user is the order buyer
 	if buyerID != userID {
 		writeError(w, http.StatusForbidden, "To nie jest Twoje zamówienie")
 		return
 	}
+	// Prevent double payments
 	if paymentStatus == "completed" {
 		writeError(w, http.StatusConflict, "Zamówienie jest już opłacone")
 		return
 	}
+	// Only allow payment on pending orders
 	if orderStatus != "pending" {
 		writeError(w, http.StatusConflict, "Tego zamówienia nie można już opłacić")
 		return
 	}
 
+	// Simulate payment decline for the test card
 	if cardNumber == declinedTestCard {
 		if _, err := tx.Exec(ctx, `UPDATE payments SET status = 'failed' WHERE id = $1`, paymentID); err != nil {
 			writeError(w, http.StatusInternalServerError, "Błąd zapisu płatności")
@@ -136,6 +153,7 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Mark payment as completed with transaction ID and timestamp
 	txID := generateTxID()
 	if _, err := tx.Exec(ctx, `
 		UPDATE payments SET status = 'completed', provider_tx_id = $1, paid_at = NOW() WHERE id = $2
@@ -143,6 +161,7 @@ func handlePayOrder(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Błąd zapisu płatności")
 		return
 	}
+	// Update order status to paid
 	if _, err := tx.Exec(ctx, `UPDATE orders SET status = 'paid' WHERE id = $1`, orderID); err != nil {
 		writeError(w, http.StatusInternalServerError, "Błąd aktualizacji zamówienia")
 		return

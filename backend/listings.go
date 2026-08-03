@@ -9,9 +9,13 @@ import (
 	"time"
 )
 
+// handleGetListings returns paginated listings with support for filtering and sorting.
+// Query parameters: page, page_size, category, shop_id, q (search), min_price, max_price,
+// in_stock, sort (price_asc, price_desc, popular).
 func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 
+	// Parse pagination parameters with defaults
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page < 1 {
 		page = 1
@@ -21,16 +25,19 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 		pageSize = 24
 	}
 
+	// Build dynamic WHERE clause from query filters
 	conditions := []string{"l.is_active = TRUE"}
 	args := []interface{}{}
 	argN := 0
 
+	// Helper to safely add parameterized query arguments
 	nextArg := func(v interface{}) string {
 		argN++
 		args = append(args, v)
 		return fmt.Sprintf("$%d", argN)
 	}
 
+	// Add filter conditions based on query parameters
 	if categorySlug := strings.TrimSpace(q.Get("category")); categorySlug != "" {
 		conditions = append(conditions, "c.slug = "+nextArg(categorySlug))
 	}
@@ -41,22 +48,26 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 		placeholder := nextArg("%" + search + "%")
 		conditions = append(conditions, "(l.title ILIKE "+placeholder+" OR l.description ILIKE "+placeholder+")")
 	}
+	// Filter by minimum price
 	if minPrice := strings.TrimSpace(q.Get("min_price")); minPrice != "" {
 		if v, err := strconv.ParseFloat(minPrice, 64); err == nil {
 			conditions = append(conditions, "l.price >= "+nextArg(v))
 		}
 	}
+	// Filter by maximum price
 	if maxPrice := strings.TrimSpace(q.Get("max_price")); maxPrice != "" {
 		if v, err := strconv.ParseFloat(maxPrice, 64); err == nil {
 			conditions = append(conditions, "l.price <= "+nextArg(v))
 		}
 	}
+	// Filter to only in-stock items
 	if q.Get("in_stock") == "true" {
 		conditions = append(conditions, "l.quantity > 0")
 	}
 
 	whereClause := strings.Join(conditions, " AND ")
 
+	// Determine sort order (default is newest first)
 	orderBy := "l.created_at DESC"
 	switch q.Get("sort") {
 	case "price_asc":
@@ -70,6 +81,7 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Get total matching listings count for pagination
 	countQuery := `
 		SELECT COUNT(*)
 		FROM listings l
@@ -86,6 +98,7 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	limitArg := nextArg(pageSize)
 	offsetArg := nextArg((page - 1) * pageSize)
 
+	// Fetch paginated listings with primary photo URL in a subquery
 	listQuery := `
 		SELECT
 			l.id, l.shop_id, s.name, l.category_id, l.title, l.description,
@@ -106,6 +119,7 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
+	// Scan listing rows and fetch associated shipping information
 	items := []Listing{}
 	for rows.Next() {
 		var l Listing
@@ -119,10 +133,12 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 		}
 		items = append(items, l)
 	}
+	// Attach shipping info for each listing (if exists)
 	for i := range items {
 		attachShipping(ctx, &items[i])
 	}
 
+	// Calculate pagination info
 	totalPages := (total + pageSize - 1) / pageSize
 	if totalPages < 1 {
 		totalPages = 1
@@ -137,12 +153,16 @@ func handleGetListings(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleGetListing returns detailed information for a single active listing,
+// including photos, variants (if applicable), and shipping details.
+// Also increments the view counter asynchronously.
 func handleGetListing(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Fetch listing details from database
 	var l Listing
 	err := dbPool.QueryRow(ctx, `
 		SELECT
@@ -161,8 +181,10 @@ func handleGetListing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "Produkt nie znaleziony")
 		return
 	}
+	// Fetch shipping profile if associated
 	attachShipping(ctx, &l)
 
+	// Fetch all photos for this listing, primary photo first
 	rows, err := dbPool.Query(ctx, `
 		SELECT id, url, alt_text, is_primary, sort_order
 		FROM listing_photos
@@ -179,10 +201,12 @@ func handleGetListing(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Fetch variant options (sizes, colors, etc.) if listing has variants
 	if l.HasVariants {
 		l.VariantTypes, l.VariantSkus = fetchListingVariants(ctx, id)
 	}
 
+	// Increment view count asynchronously (don't block response)
 	go dbPool.Exec(context.Background(), `UPDATE listings SET views_count = views_count + 1 WHERE id = $1`, id)
 
 	writeJSON(w, http.StatusOK, l)

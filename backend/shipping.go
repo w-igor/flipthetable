@@ -11,23 +11,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// validateShippingProfileRequest checks that a shipping profile request has valid values.
+// Returns an error message if invalid, or empty string if all fields pass validation.
 func validateShippingProfileRequest(req *ShippingProfileRequest) string {
 	req.Name = strings.TrimSpace(req.Name)
 	if len(req.Name) < 2 {
 		return "Nazwa profilu musi mieć min. 2 znaki"
 	}
+	// Validate price can be parsed as a float
 	if _, err := strconv.ParseFloat(req.Price, 64); err != nil {
 		return "Podaj prawidłową cenę wysyłki"
 	}
+	// Validate delivery day range is sensible
 	if req.MinDays < 0 || req.MaxDays < req.MinDays {
 		return "Nieprawidłowy zakres dni dostawy"
 	}
 	return ""
 }
 
-// validateOwnShippingProfile normalizes an empty-string ID to nil and, when set,
-// checks the profile belongs to the seller's own shop. Returns a user-facing
-// error message, or "" if valid.
+// validateOwnShippingProfile verifies a shipping profile belongs to the given shop.
+// Converts empty string IDs to nil and returns an error message if validation fails.
 func validateOwnShippingProfile(ctx context.Context, shopID string, id **string) string {
 	if *id != nil && **id == "" {
 		*id = nil
@@ -35,6 +38,7 @@ func validateOwnShippingProfile(ctx context.Context, shopID string, id **string)
 	if *id == nil {
 		return ""
 	}
+	// Check the profile exists and belongs to this shop
 	var exists bool
 	if err := dbPool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM shipping_profiles WHERE id = $1 AND shop_id = $2)`, **id, shopID).Scan(&exists); err != nil || !exists {
 		return "Wybrany profil wysyłki nie istnieje"
@@ -42,11 +46,13 @@ func validateOwnShippingProfile(ctx context.Context, shopID string, id **string)
 	return ""
 }
 
-// attachShipping loads the shipping profile referenced by the listing (if any) and embeds it.
+// attachShipping loads and embeds the shipping profile details into a listing.
+// Does nothing if the listing has no associated shipping profile.
 func attachShipping(ctx context.Context, l *Listing) {
 	if l.ShippingProfileID == nil {
 		return
 	}
+	// Fetch shipping profile from database
 	var sp ShippingProfile
 	err := dbPool.QueryRow(ctx, `
 		SELECT id, shop_id, name, price, min_days, max_days, created_at

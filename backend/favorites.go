@@ -7,10 +7,13 @@ import (
 	"time"
 )
 
+// FavoriteRequest is the payload for adding a listing to wishlist.
 type FavoriteRequest struct {
 	ListingID string `json:"listing_id"`
 }
 
+// handleAddFavorite adds a listing to the authenticated user's wishlist.
+// Silently ignores if already favorited (using ON CONFLICT DO NOTHING).
 func handleAddFavorite(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -27,6 +30,7 @@ func handleAddFavorite(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Insert favorite, ignoring if it already exists
 	_, err := dbPool.Exec(ctx, `
 		INSERT INTO favorites (user_id, listing_id)
 		VALUES ($1, $2)
@@ -40,6 +44,7 @@ func handleAddFavorite(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]string{"message": "Dodano do ulubionych"})
 }
 
+// handleRemoveFavorite removes a listing from the authenticated user's wishlist.
 func handleRemoveFavorite(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -51,6 +56,7 @@ func handleRemoveFavorite(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Delete the favorite relationship
 	if _, err := dbPool.Exec(ctx, `DELETE FROM favorites WHERE user_id = $1 AND listing_id = $2`, userID, listingID); err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się usunąć z ulubionych")
 		return

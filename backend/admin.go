@@ -11,8 +11,9 @@ import (
 	"time"
 )
 
-// logAdminAction records an audit trail entry. Best-effort: a logging failure
-// must not roll back or block the admin action that triggered it.
+// logAdminAction records an audit trail entry when an admin performs an action.
+// Uses best-effort error handling: logs are recorded separately and don't block the admin action.
+// Useful for compliance and security investigations.
 func logAdminAction(ctx context.Context, adminID, action, targetType, targetID, details string) {
 	_, err := dbPool.Exec(ctx, `
 		INSERT INTO admin_audit_log (admin_id, action, target_type, target_id, details)
@@ -23,6 +24,8 @@ func logAdminAction(ctx context.Context, adminID, action, targetType, targetID, 
 	}
 }
 
+// paginationParams extracts page and page_size query parameters with sensible defaults.
+// Returns page >= 1 and pageSize capped to 1-100 range.
 func paginationParams(q map[string][]string) (page, pageSize int) {
 	get := func(key string) string {
 		if v, ok := q[key]; ok && len(v) > 0 {
@@ -41,6 +44,8 @@ func paginationParams(q map[string][]string) (page, pageSize int) {
 	return
 }
 
+// handleAdminStats returns platform-wide statistics for the admin dashboard:
+// user counts, shop counts, listing counts, and order metrics.
 func handleAdminStats(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()

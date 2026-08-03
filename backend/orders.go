@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// listingLine holds product information from the listings table for order creation.
 type listingLine struct {
 	ShopID        string
 	ShopOwnerID   string
@@ -19,6 +20,7 @@ type listingLine struct {
 	ShippingPrice *string
 }
 
+// resolvedOrderItem represents a validated cart item ready to be added to an order.
 type resolvedOrderItem struct {
 	ListingID    string
 	ShopID       string
@@ -29,8 +31,9 @@ type resolvedOrderItem struct {
 	Title        string
 }
 
-// lockVariantSku locks and reads a single variant combination row for an update-in-progress
-// order, along with a human-readable label built from its type/option names.
+// lockVariantSku retrieves and locks a specific variant SKU (size/color combo) with its price and quantity.
+// Also builds a human-readable label from variant type and option names.
+// Uses row-level lock to prevent concurrent order creation from overselling.
 func lockVariantSku(ctx context.Context, tx pgx.Tx, skuID, listingID string) (price *string, quantity int, label string, err error) {
 	var t1Name, o1Value, t2Name, o2Value *string
 	err = tx.QueryRow(ctx, `
@@ -49,6 +52,8 @@ func lockVariantSku(ctx context.Context, tx pgx.Tx, skuID, listingID string) (pr
 	return price, quantity, variantLabel(t1Name, o1Value, t2Name, o2Value), nil
 }
 
+// handleCreateOrder converts a shopping cart into a pending order with payment record.
+// Validates all items are in stock, locks inventory, calculates totals with shipping, and creates payment.
 func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -62,16 +67,19 @@ func handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate request has items
 	if len(req.Items) == 0 {
 		writeError(w, http.StatusBadRequest, "Koszyk jest pusty")
 		return
 	}
+	// Validate each item has valid quantity
 	for _, item := range req.Items {
 		if item.Quantity <= 0 {
 			writeError(w, http.StatusBadRequest, "Nieprawidłowa ilość produktu")
 			return
 		}
 	}
+	// Validate shipping address is complete
 	if req.ShippingAddr.FullName == "" || req.ShippingAddr.Address == "" || req.ShippingAddr.City == "" {
 		writeError(w, http.StatusBadRequest, "Uzupełnij dane wysyłki")
 		return

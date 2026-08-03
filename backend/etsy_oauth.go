@@ -19,10 +19,11 @@ import (
 const (
 	etsyOAuthAuthorizeURL = "https://www.etsy.com/oauth/connect"
 	etsyOAuthTokenURL     = "https://api.etsy.com/v3/public/oauth/token"
-	etsyOAuthScope        = "listings_r"
+	etsyOAuthScope        = "listings_r" // Read-only access to listings
 	etsyOAuthStateTTL     = 10 * time.Minute
 )
 
+// etsyOAuthRedirectURI returns the OAuth callback URL, configurable via environment or defaults to localhost.
 func etsyOAuthRedirectURI() string {
 	if v := strings.TrimSpace(os.Getenv("ETSY_OAUTH_REDIRECT_URI")); v != "" {
 		return v
@@ -30,6 +31,7 @@ func etsyOAuthRedirectURI() string {
 	return "http://localhost:8080/seller/etsy/oauth/callback"
 }
 
+// etsyFrontendURL returns the frontend URL for redirecting after OAuth completion.
 func etsyFrontendURL() string {
 	if v := strings.TrimSpace(os.Getenv("FRONTEND_URL")); v != "" {
 		return v
@@ -37,17 +39,22 @@ func etsyFrontendURL() string {
 	return "http://localhost:3000"
 }
 
+// etsyPendingAuth stores intermediate OAuth state during the authorization flow.
 type etsyPendingAuth struct {
-	ShopID       string
-	CodeVerifier string
-	CreatedAt    time.Time
+	ShopID       string    // The seller's shop ID initiating the OAuth flow
+	CodeVerifier string    // PKCE code verifier for secure authorization code flow
+	CreatedAt    time.Time // For cleanup of expired pending authentications
 }
 
 var (
-	etsyOAuthMu      sync.Mutex
+	// etsyOAuthMu protects concurrent access to etsyOAuthPending map.
+	etsyOAuthMu sync.Mutex
+	// etsyOAuthPending stores in-flight OAuth states with their associated shop/verifier info.
 	etsyOAuthPending = map[string]etsyPendingAuth{}
 )
 
+// etsyOAuthStoreState generates a random OAuth state parameter and stores it with shop and code verifier info.
+// Also cleans up expired pending states (older than etsyOAuthStateTTL).
 func etsyOAuthStoreState(shopID, codeVerifier string) string {
 	buf := make([]byte, 24)
 	_, _ = rand.Read(buf)
@@ -55,6 +62,7 @@ func etsyOAuthStoreState(shopID, codeVerifier string) string {
 
 	etsyOAuthMu.Lock()
 	defer etsyOAuthMu.Unlock()
+	// Clean up expired states to avoid unbounded map growth
 	for k, v := range etsyOAuthPending {
 		if time.Since(v.CreatedAt) > etsyOAuthStateTTL {
 			delete(etsyOAuthPending, k)
@@ -64,6 +72,8 @@ func etsyOAuthStoreState(shopID, codeVerifier string) string {
 	return state
 }
 
+// etsyOAuthTakeState retrieves and removes a pending OAuth state, verifying it's not expired.
+// Returns the pending auth info and a boolean indicating if the state was valid.
 func etsyOAuthTakeState(state string) (etsyPendingAuth, bool) {
 	etsyOAuthMu.Lock()
 	defer etsyOAuthMu.Unlock()
@@ -72,6 +82,7 @@ func etsyOAuthTakeState(state string) (etsyPendingAuth, bool) {
 		return etsyPendingAuth{}, false
 	}
 	delete(etsyOAuthPending, state)
+	// Verify the state hasn't expired
 	if time.Since(pending.CreatedAt) > etsyOAuthStateTTL {
 		return etsyPendingAuth{}, false
 	}

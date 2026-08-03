@@ -6,10 +6,13 @@ import (
 	"time"
 )
 
+// handleGetCategories returns all product categories in sort order.
+// Used for populating category filters on the product listing page.
 func handleGetCategories(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Fetch all categories ordered by display priority
 	rows, err := dbPool.Query(ctx, `
 		SELECT id, parent_id, name, slug, description, sort_order
 		FROM categories
@@ -21,6 +24,7 @@ func handleGetCategories(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
+	// Scan all categories into a slice
 	categories := []Category{}
 	for rows.Next() {
 		var c Category

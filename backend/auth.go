@@ -11,16 +11,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// writeJSON encodes a response payload as JSON and writes it to the response writer.
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(payload)
 }
 
+// writeError returns a JSON error response with the given status code and message.
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, ErrorResponse{Message: message})
 }
 
+// handleRegister creates a new user account, validates input, hashes the password,
+// and returns JWT access/refresh tokens for immediate login.
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -28,9 +32,11 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Normalize email and trim whitespace
 	req.Username = strings.TrimSpace(req.Username)
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
+	// Validate input parameters
 	if len(req.Username) < 3 {
 		writeError(w, http.StatusBadRequest, "Nazwa użytkownika musi mieć min. 3 znaki")
 		return
@@ -44,6 +50,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Hash password using bcrypt with default cost
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się przetworzyć hasła")
@@ -85,6 +92,8 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleLogin authenticates a user by email and password, verifies their account status,
+// and returns JWT access/refresh tokens if credentials are valid.
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -92,11 +101,13 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Normalize email to lowercase
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Fetch user from database and retrieve password hash
 	var user User
 	var passwordHash string
 	err := dbPool.QueryRow(ctx, `
@@ -116,11 +127,13 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if user account is active (not disabled by admin)
 	if !user.IsActive {
 		writeError(w, http.StatusForbidden, "Konto zostało dezaktywowane")
 		return
 	}
 
+	// Verify password using bcrypt constant-time comparison
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
 		writeError(w, http.StatusUnauthorized, "Nieprawidłowy e-mail lub hasło")
 		return
@@ -139,6 +152,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleRefresh generates a new access token using a valid refresh token.
+// The refresh token's expiry is not extended during this call.
 func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	var req RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -146,12 +161,14 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse and validate refresh token
 	claims, err := parseToken(req.RefreshToken, "refresh")
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, "Nieprawidłowy lub wygasły refresh token")
 		return
 	}
 
+	// Issue new access token with fresh expiry
 	accessToken, err := generateToken(claims.UserID, "access", accessTokenTTL)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Nie udało się wygenerować tokenu")
@@ -161,6 +178,7 @@ func handleRefresh(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"access_token": accessToken})
 }
 
+// handleMe returns the current authenticated user's profile information.
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromContext(r.Context())
 	if !ok {
@@ -171,6 +189,7 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
+	// Fetch current user data from database
 	var user User
 	err := dbPool.QueryRow(ctx, `
 		SELECT id, email, username, full_name, avatar_url, is_seller, is_admin, is_active, created_at
@@ -192,6 +211,7 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, user)
 }
 
+// isUniqueViolation checks if a database error is a unique constraint violation (e.g., duplicate email).
 func isUniqueViolation(err error) bool {
 	return strings.Contains(err.Error(), "duplicate key value violates unique constraint")
 }
