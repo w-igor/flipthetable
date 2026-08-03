@@ -1,10 +1,15 @@
+// Shopping Cart Management
+// Handles local cart state, persistence, and display updates
+
 const CART_API_URL = window.API_URL || 'http://localhost:8080';
 const CART_STORAGE_KEY = 'cart';
 
+// Generates a unique key for a cart entry (listing + optional variant)
 function cartKey(listingId, variantSkuId) {
   return variantSkuId ? `${listingId}__${variantSkuId}` : listingId;
 }
 
+// Retrieves the shopping cart from localStorage
 function getCart() {
   try {
     return JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || {};
@@ -13,12 +18,14 @@ function getCart() {
   }
 }
 
+// Persists cart to localStorage and updates the badge
 function saveCart(cart) {
   localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   updateCartBadge();
 }
 
-// variantSkuId is null for listings without variants.
+// Adds an item to the cart (quantity is additive if item already exists)
+// variantSkuId is null for listings without variants
 function addToCart(listingId, quantity = 1, variantSkuId = null) {
   const cart = getCart();
   const key = cartKey(listingId, variantSkuId);
@@ -31,6 +38,7 @@ function addToCart(listingId, quantity = 1, variantSkuId = null) {
   saveCart(cart);
 }
 
+// Updates the quantity of an item in the cart (or removes if quantity <= 0)
 function setCartQuantity(key, quantity) {
   const cart = getCart();
   if (quantity <= 0) {
@@ -42,6 +50,7 @@ function setCartQuantity(key, quantity) {
   renderCartDrawer();
 }
 
+// Removes an item from the cart and updates display
 function removeFromCart(key) {
   const cart = getCart();
   delete cart[key];
@@ -49,24 +58,27 @@ function removeFromCart(key) {
   renderCartDrawer();
 }
 
+// Calculates the total number of items in the cart
 function getCartCount() {
   const cart = getCart();
   return Object.values(cart).reduce((sum, entry) => sum + entry.quantity, 0);
 }
 
+// Updates the cart badge with the current item count
 function updateCartBadge() {
   const badge = document.getElementById('cartCount');
   if (badge) badge.textContent = getCartCount();
 }
 
+// Safely escapes HTML to prevent XSS
 function cartEscapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-// Resolves the effective price/quantity/label for a cart entry against the
-// full listing payload (which embeds variant_skus when has_variants is true).
+// Resolves price, quantity, and label for a cart line from listing data
+// Handles both simple products and variant-based products
 function resolveCartLine(listing, entry) {
   if (!entry.variantSkuId) {
     return { price: parseFloat(listing.price), quantity: listing.quantity, label: null };
@@ -80,6 +92,8 @@ function resolveCartLine(listing, entry) {
   };
 }
 
+// Renders the shopping cart drawer with current items and total
+// Fetches listing details and calculates totals per item
 async function renderCartDrawer() {
   const listEl = document.getElementById('cartItemsList');
   const totalEl = document.getElementById('cartTotalAmount');
@@ -88,14 +102,17 @@ async function renderCartDrawer() {
   const cart = getCart();
   const entries = Object.entries(cart);
 
+  // Handle empty cart
   if (entries.length === 0) {
     listEl.innerHTML = `<p class="cart-empty">${t('cart.empty')}</p>`;
     if (totalEl) totalEl.textContent = '0.00 PLN';
     return;
   }
 
+  // Show loading state while fetching listing data
   listEl.innerHTML = `<p class="cart-loading">${t('common.loading')}</p>`;
 
+  // Batch fetch all listing details
   const uniqueListingIds = [...new Set(entries.map(([, e]) => e.listingId))];
   const listingResults = await Promise.all(
     uniqueListingIds.map((id) =>
@@ -109,6 +126,7 @@ async function renderCartDrawer() {
   let total = 0;
   listEl.innerHTML = '';
 
+  // Render each cart item
   entries.forEach(([key, entry]) => {
     const listing = listingsById[entry.listingId];
     if (!listing) return;
@@ -147,9 +165,11 @@ async function renderCartDrawer() {
     listEl.appendChild(row);
   });
 
+  // Update cart total
   if (totalEl) totalEl.textContent = `${total.toFixed(2)} PLN`;
 }
 
+// Toggles the cart drawer visibility
 function toggleCartDrawer(forceOpen) {
   const drawer = document.getElementById('cartDrawer');
   const overlay = document.getElementById('cartOverlay');
@@ -159,9 +179,11 @@ function toggleCartDrawer(forceOpen) {
   drawer.classList.toggle('open', shouldOpen);
   overlay.classList.toggle('open', shouldOpen);
 
+  // Render cart when opening
   if (shouldOpen) renderCartDrawer();
 }
 
+// Initializes the shopping cart widget on page load
 function initCartWidget() {
   updateCartBadge();
 
@@ -174,4 +196,5 @@ function initCartWidget() {
   if (overlay) overlay.addEventListener('click', () => toggleCartDrawer(false));
 }
 
+// Initialize cart widget when DOM is ready
 document.addEventListener('DOMContentLoaded', initCartWidget);

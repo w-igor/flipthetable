@@ -1,17 +1,24 @@
+// API Configuration and Authentication Management
+// Handles token refresh, session management, and authenticated requests
+
 const API_URL = window.API_URL || 'http://localhost:8080';
 
+// Retrieves the access token from localStorage or sessionStorage
 function getAccessToken() {
   return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 }
 
+// Retrieves the refresh token from localStorage or sessionStorage
 function getRefreshToken() {
   return localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
 }
 
+// Determines which storage mechanism (localStorage/sessionStorage) is currently in use
 function getActiveStorage() {
   return localStorage.getItem('access_token') ? localStorage : sessionStorage;
 }
 
+// Clears all authentication data from both storage mechanisms
 function clearSession() {
   [localStorage, sessionStorage].forEach((storage) => {
     storage.removeItem('access_token');
@@ -20,6 +27,7 @@ function clearSession() {
   });
 }
 
+// Requests a new access token using the refresh token
 async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
@@ -39,9 +47,8 @@ async function refreshAccessToken() {
   }
 }
 
-// Wraps fetch for authenticated endpoints: on 401, tries a token refresh
-// once and retries; if that also fails, clears the session and bounces
-// to login so the user isn't left staring at a silent failure.
+// Makes authenticated API requests with automatic token refresh on 401
+// Redirects to login if no token is available or refresh fails
 async function authFetch(path, options = {}) {
   const doFetch = (token) =>
     fetch(`${API_URL}${path}`, {
@@ -60,6 +67,7 @@ async function authFetch(path, options = {}) {
 
   let res = await doFetch(token);
 
+  // If token expired, attempt refresh and retry once
   if (res.status === 401) {
     const newToken = await refreshAccessToken();
     if (newToken) {
@@ -74,7 +82,7 @@ async function authFetch(path, options = {}) {
   return res;
 }
 
-// Uploads a single image file and resolves to its public URL, or null on failure.
+// Uploads a single image file to the server and returns its public URL
 async function uploadPhoto(file) {
   const formData = new FormData();
   formData.append('photo', file);

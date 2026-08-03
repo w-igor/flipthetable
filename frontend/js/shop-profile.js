@@ -1,7 +1,12 @@
+// Individual Seller Shop Profile Page
+// Displays seller information, shop banner/avatar, and their product listings
+
+// Formats a price value with currency code
 function formatPrice(price, currency) {
   return `${parseFloat(price).toFixed(2)} ${currency}`;
 }
 
+// Renders the shop header with banner, avatar, and seller contact button
 function renderShopHeader(shop) {
   const container = document.getElementById('shopProfileHeader');
   document.title = `${shop.name} — FlipTheTable`;

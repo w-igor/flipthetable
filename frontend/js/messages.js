@@ -1,8 +1,13 @@
+// Direct Messaging System
+// Enables real-time communication between users
+// Manages conversations, message history, and unread counts
+
 let currentUser = null;
 let conversations = [];
 let activeUserID = null;
 let activeUserName = null;
 
+// Redirects to login if user is not authenticated
 function requireLogin() {
   const user = getCurrentUser();
   if (!user) {

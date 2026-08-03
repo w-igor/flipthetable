@@ -1,5 +1,9 @@
+// Authentication Pages (Login & Register)
+// Handles form submission, validation, and session establishment
+
 const API_URL = window.API_URL || 'http://localhost:8080';
 
+// Displays a banner message (error or success)
 function showBanner(type, message) {
   const banner = document.getElementById(type === 'error' ? 'errorBanner' : 'successBanner');
   const other = document.getElementById(type === 'error' ? 'successBanner' : 'errorBanner');
@@ -8,11 +12,13 @@ function showBanner(type, message) {
   banner.classList.add('show');
 }
 
+// Hides all banner messages
 function clearBanners() {
   document.getElementById('errorBanner').classList.remove('show');
   document.getElementById('successBanner').classList.remove('show');
 }
 
+// Sets or clears field-level validation error messages
 function setFieldError(fieldId, message) {
   const input = document.getElementById(fieldId);
   const errorEl = document.getElementById(fieldId + 'Error');
@@ -25,10 +31,13 @@ function setFieldError(fieldId, message) {
   }
 }
 
+// Validates email format using basic regex
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Stores authentication tokens and user data
+// Uses localStorage if "remember me" is checked, otherwise sessionStorage
 function storeSession(data, remember) {
   const storage = remember ? localStorage : sessionStorage;
   storage.setItem('access_token', data.access_token);
@@ -36,6 +45,7 @@ function storeSession(data, remember) {
   storage.setItem('user', JSON.stringify(data.user));
 }
 
+// Toggles password field visibility (show/hide password)
 function togglePasswordVisibility() {
   document.querySelectorAll('.auth-toggle-password').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -47,6 +57,7 @@ function togglePasswordVisibility() {
   });
 }
 
+// Initializes the login page with form validation and submission
 function initLoginPage() {
   const form = document.getElementById('loginForm');
   const submitBtn = document.getElementById('submitBtn');
@@ -103,6 +114,7 @@ function initLoginPage() {
   });
 }
 
+// Initializes the registration page with form validation and submission
 function initRegisterPage() {
   const form = document.getElementById('registerForm');
   const submitBtn = document.getElementById('submitBtn');
@@ -167,6 +179,7 @@ function initRegisterPage() {
   });
 }
 
+// Routes to appropriate auth page initialization based on current page
 function initAuthPage(page) {
   togglePasswordVisibility();
   if (page === 'login') initLoginPage();

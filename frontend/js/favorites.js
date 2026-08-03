@@ -1,3 +1,7 @@
+// User Favorites/Wishlist Page
+// Displays user's saved favorite products with removal capability
+
+// Redirects to login if user is not authenticated
 function requireLogin() {
   const user = getCurrentUser();
   if (!user) {
@@ -7,6 +11,7 @@ function requireLogin() {
   return user;
 }
 
+// Formats a price value with currency code
 function formatPrice(price, currency) {
   return `${parseFloat(price).toFixed(2)} ${currency}`;
 }

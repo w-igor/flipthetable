@@ -1,3 +1,7 @@
+// Main Product Catalog/Shop Page
+// Displays browsable product listings with filtering, search, and pagination
+// Handles favorites management and cart interactions
+
 const state = {
   category: '',
   q: '',
@@ -9,11 +13,13 @@ const state = {
   pageSize: 12,
 };
 
+// Formats a price value with currency code
 function formatPrice(price, currency) {
   const value = parseFloat(price).toFixed(2);
   return `${value} ${currency}`;
 }
 
+// Cache of user's favorite listing IDs for quick lookup
 let favoriteIds = new Set();
 
 async function loadFavoriteIds() {

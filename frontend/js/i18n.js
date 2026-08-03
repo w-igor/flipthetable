@@ -1,6 +1,28 @@
-// Client-side i18n: flat dot-namespaced keys, 3 locales (pl/en/de).
-// t(key, vars) looks up the current locale, falls back to pl, falls back to the raw key.
-// tn(key, count, vars) does the same but picks a plural form (Polish has 3: one/few/many).
+// Internationalization (i18n) Translation Dictionaries
+// Provides multi-language support for the entire application
+//
+// Supported Languages:
+//   - Polish (pl): default fallback language
+//   - English (en): primary secondary language
+//   - German (de): additional language support
+//
+// Usage:
+//   t('namespace.key') - simple key lookup
+//   t('namespace.key', { var: value }) - key with variable substitution
+//   tn('namespace.key', count) - plural form selection based on count
+//
+// Translation Organization by Namespace:
+//   - common: shared UI labels and messages
+//   - auth: login/registration related strings
+//   - nav: navigation and header items
+//   - shop: product listing and browsing pages
+//   - cart: shopping cart interface
+//   - checkout: payment and order process
+//   - orders: customer order management
+//   - messages: messaging/chat interface
+//   - dashboard: seller dashboard and admin panel
+//   - admin: administrative interface
+//   - favorites: user favorites/wishlist
 
 const I18N_DICTS = {
   pl: {

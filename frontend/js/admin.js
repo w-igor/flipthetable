@@ -1,5 +1,11 @@
+// Administrator Control Panel
+// Provides platform-wide management for users, shops, listings, orders, categories, and audit logging
+// Only accessible to users with admin privileges
+
+// Possible order statuses in the system
 const orderStatusValues = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 
+// Maps audit action codes to their i18n translation keys
 const auditActionKeys = {
   'user.activate': 'audit_action.user_activate',
   'user.deactivate': 'audit_action.user_deactivate',

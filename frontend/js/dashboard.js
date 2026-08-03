@@ -1,6 +1,11 @@
+// Seller Dashboard Panel
+// Enables sellers to manage their shop, products, orders, and shipping configurations
+// Includes features for product variants, photo management, and Etsy integration
+
 let categories = [];
 let shippingProfiles = [];
 
+// Displays a banner notification message on the dashboard
 function showDashboardBanner(message, type = 'error') {
   const banner = document.getElementById('dashboardBanner');
   banner.textContent = message;

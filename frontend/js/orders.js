@@ -1,5 +1,10 @@
+// Customer Orders Management Page
+// Displays user's order history with status tracking, payment retry, and review capabilities
+
+// Order statuses that allow product reviews
 const reviewableStatuses = ['paid', 'processing', 'shipped', 'delivered'];
 
+// Redirects to login if user is not authenticated
 function requireLogin() {
   const user = getCurrentUser();
   if (!user) {

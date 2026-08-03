@@ -1,9 +1,14 @@
+// Navigation and Header Management
+// Handles user authentication status, header rendering, and navigation updates
+
+// Safely escapes HTML special characters to prevent XSS attacks
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
+// Retrieves the current logged-in user from storage
 function getCurrentUser() {
   const raw = localStorage.getItem('user') || sessionStorage.getItem('user');
   if (!raw) return null;
@@ -14,6 +19,7 @@ function getCurrentUser() {
   }
 }
 
+// Logs out the user by clearing all session data and disconnecting WebSocket
 function logout() {
   if (typeof disconnectWS === 'function') disconnectWS();
   localStorage.removeItem('access_token');
@@ -25,8 +31,8 @@ function logout() {
   window.location.reload();
 }
 
-// Renders the logged-in header markup. Safe to call repeatedly (e.g. on a
-// language change) since it doesn't touch polling/WS setup.
+// Renders the authenticated user header with navigation links
+// Safe to call repeatedly for re-renders (e.g., language changes)
 function renderHeaderAuthLinks() {
   const authActions = document.getElementById('authActions');
   if (!authActions) return;
@@ -57,27 +63,26 @@ function renderHeaderAuthLinks() {
   if (previousCount !== null) setUnreadBadge(parseInt(previousCount, 10));
 }
 
-// Populates #authActions with a greeting + seller/dashboard link + logout,
-// or leaves the logged-out markup (login/register links) untouched.
+// Initializes header for authenticated users
+// Sets up real-time message badge updates via WebSocket + polling fallback
 function updateHeaderForAuth() {
   if (!getCurrentUser()) return;
   renderHeaderAuthLinks();
 
   refreshUnreadBadge();
-  // Live updates arrive over the WebSocket; this is just the slow-poll
-  // fallback in case the socket is down for an extended stretch.
+  // Poll for unread count every 60 seconds as fallback if WebSocket is unavailable
   setInterval(refreshUnreadBadge, 60000);
   if (typeof connectWS === 'function') connectWS();
 }
 
-// Re-render the header (and any page-specific dynamic content) when the
-// user switches language via the header <select>. Defined here so ws.js's
-// event dispatch and pages without a logged-in header don't need to guard.
+// Global handler for language changes
+// Re-renders the header and delegates to page-specific locale handlers
 function onLocaleChange() {
   renderHeaderAuthLinks();
   if (typeof onPageLocaleChange === 'function') onPageLocaleChange();
 }
 
+// Updates the unread message badge display
 function setUnreadBadge(count) {
   const badge = document.getElementById('navUnreadBadge');
   if (!badge) return;
@@ -89,6 +94,7 @@ function setUnreadBadge(count) {
   }
 }
 
+// Fetches and updates the unread message count from the server
 async function refreshUnreadBadge() {
   if (typeof authFetch !== 'function') return;
   try {
@@ -97,6 +103,6 @@ async function refreshUnreadBadge() {
     const data = await res.json();
     setUnreadBadge(data.count);
   } catch (err) {
-    // odznaka po prostu nie odświeży się w tej turze
+    // Badge will refresh on next attempt
   }
 }

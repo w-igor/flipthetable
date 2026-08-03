@@ -1,25 +1,34 @@
+// Checkout Process Management
+// Handles order creation, payment processing, and order confirmation
+
+// Safely escapes HTML to prevent XSS attacks
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
+// Displays an error banner message
 function showError(message) {
   const banner = document.getElementById('errorBanner');
   banner.textContent = message;
   banner.classList.add('show');
 }
 
+// Loads and displays the checkout order summary
+// Fetches listing details, calculates totals, and groups items by shop
 async function loadSummary() {
   const cart = JSON.parse(localStorage.getItem('cart') || '{}');
   const entries = Object.entries(cart);
 
+  // Show empty cart message if no items
   if (entries.length === 0) {
     document.getElementById('checkoutEmpty').style.display = 'block';
     document.getElementById('checkoutLayout').style.display = 'none';
     return null;
   }
 
+  // Batch fetch all listing details
   const uniqueListingIds = [...new Set(entries.map(([, e]) => e.listingId))];
   const listingResults = await Promise.all(
     uniqueListingIds.map((id) =>
@@ -30,6 +39,7 @@ async function loadSummary() {
   );
   const listingsById = Object.fromEntries(uniqueListingIds.map((id, i) => [id, listingResults[i]]));
 
+  // Group items by shop for separate order creation
   const shopGroups = {};
   let total = 0;
 
@@ -82,6 +92,7 @@ async function loadSummary() {
   return { cart };
 }
 
+// Initializes the checkout page with authentication check and order processing
 function initCheckout() {
   const token = getAccessToken();
   if (!token) {
