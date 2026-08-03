@@ -78,7 +78,7 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ## Niezrobione jeszcze ❌
 
-- 5❌ dodac komentarze do kodu
+- M 5❌ dodac komentarze do kodu 
 - 5❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
 - 4❌ Poprawic konwersje walut
 - 5❌ Dodac zadania do Jira
@@ -95,7 +95,6 @@ Marketing i widoczność:
 - 1❌ Star Seller — automatyczna odznaka zaufania z czasu odpowiedzi, terminowości wysyłki i ocen
 
 Zakupy i płatności:
-- 5❌ Prawdziwe metody płatności (Apple Pay, Google Pay, PayPal, karty podarunkowe) — obecnie tylko symulowana karta
 - 5❌ Personalizacja produktu — pole „dodaj swoją personalizację" na ofercie (np. grawer, dedykacja)
 - 5❌ Opcje prezentowe (pakowanie, wiadomość, paragon bez ceny)
 - 3❌ Filtrowanie po czasie dostawy, lokalizacji sklepu, dodatkowych atrybutach produktu
@@ -103,11 +102,11 @@ Zakupy i płatności:
 Sprzedawcy:
 - 5❌ Sekcje/kolekcje w sklepie, masowa edycja ofert, import/export CSV
 - 5❌ Digital downloads — natychmiastowa dostawa produktu cyfrowego bez fizycznej wysyłki
-- 5❌ Onboarding / Tutorial
+- I 5❌ Onboarding / Tutorial -
 
 Zaufanie i obsługa sporów:
 - 4❌ System zgłoszeń/sporów (case system) + program ochrony kupującego z gwarantowanym zwrotem
-- 5❌ Formalne, ustrukturyzowane polityki sklepu (zwroty, wymiany, prywatność) zamiast wolnego tekstu
+- R 5❌ Formalne, ustrukturyzowane polityki sklepu (zwroty, wymiany, prywatność) zamiast wolnego tekstu
 
 Zasięg:
 - 4❌ Aplikacje mobilne (obecnie tylko web) (seller/buyer)
