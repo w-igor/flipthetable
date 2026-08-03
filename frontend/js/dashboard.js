@@ -460,6 +460,53 @@ function clearVariantBanner() {
   banner.textContent = '';
 }
 
+function showEtsyBanner(message, type = 'error') {
+  const banner = document.getElementById('etsyImportBanner');
+  banner.innerHTML = message;
+  banner.className = `dashboard-banner show ${type}`;
+}
+
+function clearEtsyBanner() {
+  const banner = document.getElementById('etsyImportBanner');
+  banner.className = 'dashboard-banner';
+  banner.textContent = '';
+}
+
+async function loadEtsyStatus() {
+  try {
+    const res = await authFetch('/seller/etsy/status');
+    if (!res.ok) return;
+    const status = await res.json();
+
+    document.getElementById('etsyNotConfiguredHint').style.display = status.api_key_configured ? 'none' : 'block';
+    const canUseEtsy = status.api_key_configured;
+    document.getElementById('etsyNotConnected').style.display = canUseEtsy && !status.connected ? 'block' : 'none';
+    document.getElementById('etsyImportFields').style.display = canUseEtsy && status.connected ? 'block' : 'none';
+    document.getElementById('etsyImportSubmitBtn').style.display = canUseEtsy && status.connected ? '' : 'none';
+    if (status.connected && status.etsy_shop_id) {
+      document.getElementById('etsyConnectedShopId').textContent = status.etsy_shop_id;
+    }
+  } catch (err) {
+    console.error('Nie udało się pobrać statusu Etsy', err);
+  }
+}
+
+function etsyImportResultMessage(data) {
+  const parts = [t('dashboard.etsy_result_imported', { n: data.imported })];
+  if (data.skipped) parts.push(t('dashboard.etsy_result_skipped', { n: data.skipped }));
+  if (data.errors && data.errors.length) parts.push(t('dashboard.etsy_result_errors', { n: data.errors.length }));
+  let html = escapeHtml(parts.join(' · '));
+  if (data.errors && data.errors.length) {
+    html +=
+      '<ul style="margin:8px 0 0;padding-left:18px;">' +
+      data.errors
+        .map((e) => `<li>#${escapeHtml(e.etsy_listing_id)}: ${escapeHtml(e.message)}</li>`)
+        .join('') +
+      '</ul>';
+  }
+  return html;
+}
+
 function addVariantTypeRow(name = '', optionsStr = '') {
   const container = document.getElementById('variantTypeRows');
   if (container.children.length >= 2) return;
@@ -851,6 +898,93 @@ function bindEvents() {
     document.getElementById('listingForm').style.display = 'flex';
   });
 
+  document.getElementById('etsyImportBtn').addEventListener('click', () => {
+    clearEtsyBanner();
+    document.getElementById('listingForm').style.display = 'none';
+    const panel = document.getElementById('etsyImportPanel');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    if (panel.style.display === 'flex') loadEtsyStatus();
+  });
+
+  document.getElementById('etsyImportCancelBtn').addEventListener('click', () => {
+    document.getElementById('etsyImportPanel').style.display = 'none';
+    clearEtsyBanner();
+  });
+
+  document.querySelectorAll('input[name="etsyImportMode"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      document.getElementById('etsyListingIdsField').style.display =
+        document.getElementById('etsyModeSelected').checked ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('etsyConnectBtn').addEventListener('click', async () => {
+    clearEtsyBanner();
+    try {
+      const res = await authFetch('/seller/etsy/oauth/start');
+      const data = await res.json();
+      if (!res.ok) {
+        showEtsyBanner(escapeHtml(data.message || t('dashboard.etsy_err_import_failed')));
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      showEtsyBanner(t('common.error_connect'));
+    }
+  });
+
+  document.getElementById('etsyDisconnectBtn').addEventListener('click', async () => {
+    clearEtsyBanner();
+    try {
+      const res = await authFetch('/seller/etsy/connection', { method: 'DELETE' });
+      if (!res.ok) {
+        showEtsyBanner(t('dashboard.etsy_err_import_failed'));
+        return;
+      }
+      loadEtsyStatus();
+    } catch (err) {
+      showEtsyBanner(t('common.error_connect'));
+    }
+  });
+
+  document.getElementById('etsyImportSubmitBtn').addEventListener('click', async () => {
+    clearEtsyBanner();
+    const mode = document.getElementById('etsyModeSelected').checked ? 'selected' : 'all';
+    const listingIds = document
+      .getElementById('etsyListingIdsInput')
+      .value.split(/[,\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (mode === 'selected' && listingIds.length === 0) {
+      showEtsyBanner(t('dashboard.etsy_err_ids_required'));
+      return;
+    }
+
+    const btn = document.getElementById('etsyImportSubmitBtn');
+    btn.disabled = true;
+    showEtsyBanner(t('dashboard.etsy_importing'), 'success');
+
+    try {
+      const res = await authFetch('/seller/etsy/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, listing_ids: listingIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showEtsyBanner(escapeHtml(data.message || t('dashboard.etsy_err_import_failed')));
+        return;
+      }
+      showEtsyBanner(etsyImportResultMessage(data), data.imported > 0 ? 'success' : 'error');
+      loadListings();
+    } catch (err) {
+      showEtsyBanner(t('common.error_connect'));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById('cancelListingBtn').addEventListener('click', () => {
     document.getElementById('listingForm').style.display = 'none';
     resetListingForm();
@@ -921,6 +1055,27 @@ function onPageLocaleChange() {
   loadShippingProfiles();
 }
 
+function handleEtsyOAuthRedirectParams() {
+  const params = new URLSearchParams(window.location.search);
+  const connected = params.get('etsy_connected');
+  const error = params.get('etsy_error');
+  if (!connected && !error) return;
+
+  switchTab('listings');
+  document.getElementById('etsyImportPanel').style.display = 'flex';
+  loadEtsyStatus();
+  if (connected) {
+    showEtsyBanner(t('dashboard.etsy_connected_success'), 'success');
+  } else {
+    showEtsyBanner(escapeHtml(error));
+  }
+
+  params.delete('etsy_connected');
+  params.delete('etsy_error');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
+}
+
 async function init() {
   if (!requireLogin()) return;
   updateHeaderForAuth();
@@ -928,6 +1083,7 @@ async function init() {
   await loadCategories();
   await loadShippingProfilesForSelect();
   await loadMyShop();
+  handleEtsyOAuthRedirectParams();
 }
 
 init();

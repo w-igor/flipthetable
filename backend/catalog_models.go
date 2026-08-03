@@ -36,6 +36,7 @@ type Listing struct {
 	ViewsCount        int              `json:"views_count"`
 	SalesCount        int              `json:"sales_count"`
 	AvgRating         *string          `json:"avg_rating,omitempty"`
+	EtsyListingID     *string          `json:"etsy_listing_id,omitempty"`
 	CreatedAt         time.Time        `json:"created_at"`
 	PrimaryPhoto      *string          `json:"primary_photo,omitempty"`
 	Photos            []ListingPhoto   `json:"photos,omitempty"`
@@ -61,6 +62,7 @@ type Shop struct {
 	AvatarURL   *string   `json:"avatar_url,omitempty"`
 	IsActive    bool      `json:"is_active"`
 	SalesCount  int       `json:"sales_count"`
+	EtsyShopID  *string   `json:"etsy_shop_id,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

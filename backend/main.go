@@ -23,6 +23,10 @@ func main() {
 	dbPool = pool
 	log.Println("Połączono z bazą danych (Neon)")
 
+	if err := runStartupMigrations(); err != nil {
+		log.Fatalf("Nie udało się wykonać migracji startowych: %v", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /auth/register", handleRegister)
 	mux.HandleFunc("POST /auth/login", handleLogin)
@@ -53,6 +57,11 @@ func main() {
 	mux.HandleFunc("GET /seller/stats", requireAuth(handleGetSellerStats))
 	mux.HandleFunc("GET /seller/orders", requireAuth(handleListSellerOrders))
 	mux.HandleFunc("PUT /seller/orders/{id}/status", requireAuth(handleUpdateOrderStatus))
+	mux.HandleFunc("GET /seller/etsy/status", requireAuth(handleEtsyStatus))
+	mux.HandleFunc("DELETE /seller/etsy/connection", requireAuth(handleEtsyDisconnect))
+	mux.HandleFunc("POST /seller/etsy/import", requireAuth(handleEtsyImport))
+	mux.HandleFunc("GET /seller/etsy/oauth/start", requireAuth(handleEtsyOAuthStart))
+	mux.HandleFunc("GET /seller/etsy/oauth/callback", handleEtsyOAuthCallback)
 
 	mux.HandleFunc("POST /messages", requireAuth(handleSendMessage))
 	mux.HandleFunc("GET /messages/conversations", requireAuth(handleListConversations))

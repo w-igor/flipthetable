@@ -374,9 +374,15 @@
   cursor: pointer;
 }
 
-.dashboard-checkbox-label input[type="checkbox"] {
+.dashboard-checkbox-label input[type="checkbox"],
+.dashboard-checkbox-label input[type="radio"] {
   width: 16px;
   height: 16px;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .variant-type-row {

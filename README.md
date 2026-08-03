@@ -38,7 +38,8 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 ### Sprzedawcy
 - ✅ Zakładanie sklepu (dowolne konto może „zostać sprzedawcą" zakładając sklep — `POST /shops`)
 - ✅ Publiczny profil sklepu (`pages/shop-profile.html`) — baner, avatar, opis, siatka ofert
-- ✅ Panel sprzedawcy (`pages/dashboard.html`): edycja profilu sklepu, CRUD ofert (dodaj/edytuj/wyłącz), zarządzanie zamówieniami (zmiana statusu), statystyki (liczba zamówień, przychód, aktywne oferty)
+- ✅ Panel sprzedawcy (`pages/dashboard.html`): edycja profilu sklepu, CRUD ofert (dodaj/edytuj/wyłącz/usuń), filtrowanie i sortowanie własnych ofert (status, kategoria, wyszukiwanie, cena/ilość/tytuł), zarządzanie zamówieniami (zmiana statusu), statystyki (liczba zamówień, przychód, aktywne oferty)
+- ✅ Usuwanie oferty — prawdziwe skasowanie (nie tylko dezaktywacja); jeśli oferta ma już historię zamówień, backend blokuje usunięcie i podpowiada wyłączenie zamiast tego
 - ✅ Warianty ofert — sprzedawca definiuje do 2 własnych typów wariacji (np. Kolor, Rozmiar), każdy z dowolnymi wartościami; każda kombinacja ma własną ilość na stanie i opcjonalną własną cenę (puste = cena bazowa). Kupujący wybiera wariant na stronie produktu; stan magazynowy jest blokowany per-kombinacja przy składaniu zamówienia, a etykieta wariantu jest zapisywana w historii zamówienia nawet po usunięciu wariantu przez sprzedawcę.
 - ✅ Profile wysyłki — sprzedawca może mieć kilka profili (nazwa, cena, zakres dni dostawy) i przypisać jeden do każdej oferty. Przy zamówieniu z wielu ofert jednego sklepu naliczana jest jedna opłata za wysyłkę — najdroższy z profili użytych w zamówieniu (nie suma), doliczana do `total_amount` zamówienia.
 
@@ -59,6 +60,12 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ### Zdjęcia
 - ✅ Lokalny upload zdjęć ofert i logo/baneru sklepu (`POST /uploads`)
+- ✅ Do 8 zdjęć na ofertę — miniatury z podglądem i usuwaniem w panelu sprzedawcy, pierwsze zdjęcie jest okładką; na stronie produktu galeria z klikalnymi miniaturami
+
+### Wielojęzyczność
+- ✅ Frontend dostępny w 3 językach — polski, angielski, niemiecki (`frontend/js/i18n.js`) — przełącznik w nagłówku każdej strony, wybór zapamiętywany w `localStorage`
+- ✅ Wszystkie statyczne teksty i treści budowane dynamicznie w JS przechodzą przez `t()`/`tn()` (z obsługą polskiej odmiany liczebników); zmiana języka odświeża też już załadowane dane (listy ofert, zamówień, wiadomości itd.) bez przeładowania strony
+- ❌ Komunikaty błędów zwracane przez backend (Go) są na razie tylko po polsku — wymaga osobnego refaktoru na kody błędów
 
 ### Panel administracyjny
 - ✅ Rola `is_admin` na koncie + middleware `requireAdmin` (`backend/middleware.go`)
@@ -71,38 +78,45 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ## Niezrobione jeszcze ❌
 
-- ❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
-- ❌ Docker Compose / lokalny Postgres (obecnie tylko Neon)
-- ❌ Zgłaszanie ofert/sklepów przez użytkowników (kolejka moderacji) — admin musi na razie ręcznie przeglądać listy
+- 5❌ dodac komentarze do kodu
+- 5❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
+- 4❌ Poprawic konwersje walut
+- 5❌ Dodac zadania do Jira
+- 3❌ zdefiniowanie systemu tlumaczenia komunikatów systemowych
+- 2❌ przetlumaczyc komunikaty systemowe
+- 2❌ Zgłaszanie ofert/sklepów przez użytkowników (kolejka moderacji) — admin musi na razie ręcznie przeglądać listy
 
 ### Funkcje z Etsy, których jeszcze nie mamy
 
 Marketing i widoczność:
-- ❌ Etsy Ads / Promoted Listings — płatna reklama PPC wewnątrz platformy
-- ❌ Offsite Ads — reklama ofert poza platformą (Google/Facebook/Instagram/Pinterest), prowizja tylko od sprzedaży
-- ❌ Kupony i wyprzedaże (zniżki %/kwotowe, zaplanowane promocje, darmowa wysyłka jako zachęta)
-- ❌ Star Seller — automatyczna odznaka zaufania z czasu odpowiedzi, terminowości wysyłki i ocen
+- 0❌ Promoted Listings — płatna reklama PPC wewnątrz platformy
+--1❌ Offsite Ads — reklama ofert poza platformą (Google/Facebook/Instagram/Pinterest), prowizja tylko od sprzedaży
+- 2❌ Kupony i wyprzedaże (zniżki %/kwotowe, zaplanowane promocje, darmowa wysyłka jako zachęta)
+- 1❌ Star Seller — automatyczna odznaka zaufania z czasu odpowiedzi, terminowości wysyłki i ocen
 
 Zakupy i płatności:
-- ❌ Prawdziwe metody płatności (Apple Pay, Google Pay, raty Klarna, PayPal, karty podarunkowe) — obecnie tylko symulowana karta
-- ❌ Personalizacja produktu — pole „dodaj swoją personalizację" na ofercie (np. grawer, dedykacja)
-- ❌ Opcje prezentowe (pakowanie, wiadomość, paragon bez ceny)
-- ❌ Nazwane, udostępnialne listy życzeń/kolekcje (mamy tylko płaskie „ulubione")
-- ❌ Filtrowanie po czasie dostawy, lokalizacji sklepu, dodatkowych atrybutach produktu
+- 5❌ Prawdziwe metody płatności (Apple Pay, Google Pay, PayPal, karty podarunkowe) — obecnie tylko symulowana karta
+- 5❌ Personalizacja produktu — pole „dodaj swoją personalizację" na ofercie (np. grawer, dedykacja)
+- 5❌ Opcje prezentowe (pakowanie, wiadomość, paragon bez ceny)
+- 3❌ Filtrowanie po czasie dostawy, lokalizacji sklepu, dodatkowych atrybutach produktu
 
 Sprzedawcy:
-- ❌ Zakup i druk prawdziwych etykiet wysyłkowych z panelu (integracja z kurierem)
-- ❌ Sekcje/kolekcje w sklepie, masowa edycja ofert, import/export CSV
-- ❌ Rozbudowana analityka sprzedawcy (źródła ruchu, konwersja, wizyty) — mamy tylko podstawowe liczby
-- ❌ Digital downloads — natychmiastowa dostawa produktu cyfrowego bez fizycznej wysyłki
+- 5❌ Sekcje/kolekcje w sklepie, masowa edycja ofert, import/export CSV
+- 5❌ Digital downloads — natychmiastowa dostawa produktu cyfrowego bez fizycznej wysyłki
+- 5❌ Onboarding / Tutorial
 
 Zaufanie i obsługa sporów:
-- ❌ System zgłoszeń/sporów (case system) + program ochrony kupującego z gwarantowanym zwrotem
-- ❌ Formalne, ustrukturyzowane polityki sklepu (zwroty, wymiany, prywatność) zamiast wolnego tekstu
+- 4❌ System zgłoszeń/sporów (case system) + program ochrony kupującego z gwarantowanym zwrotem
+- 5❌ Formalne, ustrukturyzowane polityki sklepu (zwroty, wymiany, prywatność) zamiast wolnego tekstu
 
 Zasięg:
-- ❌ Wielojęzyczność i automatyczne tłumaczenie ofert, wielowalutowość
-- ❌ Aplikacje mobilne (obecnie tylko web)
+- 4❌ Aplikacje mobilne (obecnie tylko web) (seller/buyer)
+- 5❌ PWA
+
+LATER:
+- 0❌ Zakup i druk prawdziwych etykiet wysyłkowych z panelu (integracja z kurierem)
+- 2❌ Rozbudowana analityka sprzedawcy (źródła ruchu, konwersja, wizyty) — mamy tylko podstawowe liczby
+- 1❌ Automatyczne tłumaczenie treści ofert (opisy/tytuły wpisywane przez sprzedawców) i wielowalutowość — mamy wielojęzyczny interfejs (PL/EN/DE), ale treści ofert same w sobie nie są tłumaczone
 
 ## Wymagania
 
@@ -163,9 +177,9 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 ### Oferty sprzedawcy (wymagają auth + własnego sklepu)
 - `POST /listings` — dodanie oferty do własnego sklepu
 - `PUT /listings/:id` — edycja własnej oferty
-- `DELETE /listings/:id` — dezaktywacja oferty (soft-delete, `is_active = false`)
+- `DELETE /listings/:id` — trwałe usunięcie oferty; jeśli oferta ma powiązane zamówienia, zwraca `409` z podpowiedzią wyłączenia (`PUT` z `is_active: false`) zamiast usuwania
 - `PUT /listings/:id/variants` — nadpisuje całą konfigurację wariantów oferty `{types: [{name, options: [...]}] (max 2), skus: [{option_values: [...], price, quantity}]}`; `has_variants` i zagregowana `quantity` oferty są przeliczane automatycznie
-- `GET /seller/listings` — wszystkie własne oferty (także nieaktywne)
+- `GET /seller/listings` — wszystkie własne oferty (także nieaktywne); query params: `status` (`active`/`inactive`), `category_id`, `q`, `sort` (`price_asc`/`price_desc`/`stock_asc`/`stock_desc`/`title_asc`)
 - `GET /seller/listings/:id` — pełne dane własnej oferty wraz z wariantami (niezależnie od `is_active`)
 - `GET /seller/shipping-profiles` / `POST /seller/shipping-profiles` / `PUT /seller/shipping-profiles/:id` / `DELETE /seller/shipping-profiles/:id` — CRUD profili wysyłki własnego sklepu (`{name, price, min_days, max_days}`)
 - `GET /seller/stats` — statystyki sklepu (zamówienia, przychód, aktywne/wszystkie oferty)
@@ -175,6 +189,14 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 ### Opinie
 - `POST /reviews` — `{order_item_id, rating, comment}` — ocena zakupionej pozycji (auth, wymaga statusu zamówienia `paid`/`processing`/`shipped`/`delivered`)
 - `GET /listings/:id/reviews` — lista opinii dla produktu
+
+### Wiadomości i ulubione (wymagają auth)
+- `POST /messages` — `{receiver_id, body, order_id?}` — wysłanie wiadomości; odbiorca dostaje event na żywo przez WebSocket
+- `GET /messages/conversations` — lista rozmów z ostatnią wiadomością i licznikiem nieprzeczytanych
+- `GET /messages/unread-count` — łączny licznik nieprzeczytanych wiadomości
+- `GET /messages/with/:userId` — wątek z danym użytkownikiem (oznacza wiadomości jako przeczytane)
+- `GET /ws?token=` — WebSocket do powiadomień push na żywo (nowe wiadomości, zmiany licznika nieprzeczytanych); token przekazywany w query string, bo handshake WS nie pozwala na nagłówek `Authorization`
+- `GET /favorites` / `GET /favorites/ids` / `POST /favorites` / `DELETE /favorites/:listingId` — ulubione produkty
 
 ### Admin (wymagają auth + `is_admin = true`)
 - `GET /admin/stats` — statystyki platformy (użytkownicy, sklepy, oferty, zamówienia wg statusu, przychód)

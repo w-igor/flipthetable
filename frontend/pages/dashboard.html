@@ -98,7 +98,50 @@
         <div class="dashboard-card">
           <div class="dashboard-card-header">
             <h2 data-i18n="dashboard.my_listings_heading">Moje oferty</h2>
-            <button id="newListingBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" data-i18n="dashboard.add_listing_btn">+ Dodaj ofertę</button>
+            <div class="dashboard-header-actions">
+              <button id="etsyImportBtn" class="dashboard-cancel-btn dashboard-btn-small" type="button" data-i18n="dashboard.etsy_import_btn">Importuj z Etsy</button>
+              <button id="newListingBtn" class="dashboard-submit-btn dashboard-btn-small" type="button" data-i18n="dashboard.add_listing_btn">+ Dodaj ofertę</button>
+            </div>
+          </div>
+
+          <div id="etsyImportPanel" class="dashboard-form" style="display:none;">
+            <p id="etsyImportBanner" class="dashboard-banner"></p>
+            <p id="etsyNotConfiguredHint" class="dashboard-hint" style="display:none;" data-i18n="dashboard.etsy_not_configured_hint">Klucz API Etsy nie został jeszcze skonfigurowany przez administratora. Spróbuj ponownie później.</p>
+
+            <div id="etsyNotConnected" style="display:none;">
+              <p class="dashboard-hint" data-i18n="dashboard.etsy_connect_hint">Aby zaimportować oferty, połącz najpierw swój sklep z Etsy — potwierdzisz w oknie Etsy, że to Twój sklep. Import będzie możliwy wyłącznie z połączonego sklepu.</p>
+              <button type="button" class="dashboard-submit-btn dashboard-btn-small" id="etsyConnectBtn" data-i18n="dashboard.etsy_connect_btn">Połącz z Etsy</button>
+            </div>
+
+            <div id="etsyImportFields" style="display:none;">
+              <p class="dashboard-hint">
+                <span data-i18n="dashboard.etsy_connected_as">Połączono ze sklepem Etsy:</span>
+                <strong id="etsyConnectedShopId"></strong>
+                <button type="button" class="dashboard-cancel-btn dashboard-btn-small" id="etsyDisconnectBtn" data-i18n="dashboard.etsy_disconnect_btn">Rozłącz</button>
+              </p>
+
+              <div class="dashboard-field">
+                <label class="dashboard-checkbox-label">
+                  <input type="radio" name="etsyImportMode" id="etsyModeAll" value="all" checked />
+                  <span data-i18n="dashboard.etsy_mode_all">Zaimportuj wszystkie aktywne oferty ze sklepu</span>
+                </label>
+                <label class="dashboard-checkbox-label">
+                  <input type="radio" name="etsyImportMode" id="etsyModeSelected" value="selected" />
+                  <span data-i18n="dashboard.etsy_mode_selected">Zaimportuj tylko wybrane oferty (po numerach)</span>
+                </label>
+              </div>
+
+              <div class="dashboard-field" id="etsyListingIdsField" style="display:none;">
+                <label for="etsyListingIdsInput" data-i18n="dashboard.etsy_listing_ids_label">Numery ofert Etsy</label>
+                <input type="text" id="etsyListingIdsInput" placeholder="np. 123456789, 987654321" />
+                <p class="dashboard-hint" data-i18n="dashboard.etsy_listing_ids_hint">Numer oferty znajdziesz w adresie URL aukcji na Etsy (etsy.com/listing/&lt;numer&gt;/...).</p>
+              </div>
+            </div>
+
+            <div class="dashboard-form-actions">
+              <button type="button" class="dashboard-submit-btn" id="etsyImportSubmitBtn" data-i18n="dashboard.etsy_import_submit">Importuj</button>
+              <button type="button" class="dashboard-cancel-btn" id="etsyImportCancelBtn" data-i18n="common.cancel">Anuluj</button>
+            </div>
           </div>
 
           <form id="listingForm" class="dashboard-form" style="display:none;">

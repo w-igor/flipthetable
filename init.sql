@@ -57,12 +57,29 @@ CREATE TABLE shops (
   avatar_url    TEXT,
   is_active     BOOLEAN           NOT NULL DEFAULT TRUE,
   sales_count   INTEGER           NOT NULL DEFAULT 0,
+  etsy_shop_id  VARCHAR(100),
   created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_shops_owner_id ON shops (owner_id);
 CREATE INDEX idx_shops_slug     ON shops (slug);
+
+-- ============================================================
+--  2a. ETSY_CONNECTIONS
+--      OAuth link between our shop and a verified Etsy shop —
+--      required before any Etsy import is allowed, so a seller
+--      can only import listings from a shop they proved they own.
+-- ============================================================
+CREATE TABLE etsy_connections (
+  shop_id       UUID        PRIMARY KEY REFERENCES shops(id) ON DELETE CASCADE,
+  etsy_shop_id  VARCHAR(100) NOT NULL,
+  etsy_user_id  VARCHAR(100) NOT NULL,
+  access_token  TEXT        NOT NULL,
+  refresh_token TEXT        NOT NULL,
+  expires_at    TIMESTAMPTZ NOT NULL,
+  connected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ============================================================
 --  2b. SHIPPING_PROFILES
@@ -116,6 +133,7 @@ CREATE TABLE listings (
   views_count   INTEGER           NOT NULL DEFAULT 0,
   sales_count   INTEGER           NOT NULL DEFAULT 0,
   avg_rating    NUMERIC(3, 2),
+  etsy_listing_id VARCHAR(100),
   created_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ       NOT NULL DEFAULT NOW()
 );
@@ -124,6 +142,7 @@ CREATE INDEX idx_listings_shop_id     ON listings (shop_id);
 CREATE INDEX idx_listings_category_id ON listings (category_id);
 CREATE INDEX idx_listings_is_active   ON listings (is_active);
 CREATE INDEX idx_listings_price       ON listings (price);
+CREATE UNIQUE INDEX idx_listings_shop_etsy_id ON listings (shop_id, etsy_listing_id) WHERE etsy_listing_id IS NOT NULL;
 
 -- ============================================================
 --  5. LISTING_PHOTOS
