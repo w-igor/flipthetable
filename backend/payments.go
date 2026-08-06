@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -221,8 +222,15 @@ func handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), stripeWebhookSecret())
+	// IgnoreAPIVersionMismatch: the Stripe account's configured API version doesn't
+	// have to match the stripe-go SDK version — the fields we read (session id,
+	// payment_status, payment_intent id, metadata) are stable across API versions,
+	// and the HMAC signature above is what actually guarantees the payload is genuine.
+	event, err := webhook.ConstructEventWithOptions(payload, r.Header.Get("Stripe-Signature"), stripeWebhookSecret(), webhook.ConstructEventOptions{
+		IgnoreAPIVersionMismatch: true,
+	})
 	if err != nil {
+		log.Printf("Stripe webhook: weryfikacja podpisu nie powiodła się: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
