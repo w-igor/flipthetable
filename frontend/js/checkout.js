@@ -18,7 +18,7 @@ function showError(message) {
 // Loads and displays the checkout order summary
 // Fetches listing details, calculates totals, and groups items by shop
 async function loadSummary() {
-  const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+  const cart = getCart();
   const entries = Object.entries(cart);
 
   // Show empty cart message if no items
@@ -106,7 +106,7 @@ function initCheckout() {
     e.preventDefault();
     document.getElementById('errorBanner').classList.remove('show');
 
-    const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+    const cart = getCart();
     const items = Object.values(cart).map((entry) => ({
       listing_id: entry.listingId,
       variant_sku_id: entry.variantSkuId || undefined,

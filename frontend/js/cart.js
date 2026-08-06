@@ -9,13 +9,26 @@ function cartKey(listingId, variantSkuId) {
   return variantSkuId ? `${listingId}__${variantSkuId}` : listingId;
 }
 
-// Retrieves the shopping cart from localStorage
+// Retrieves the shopping cart from localStorage, dropping any entry with a
+// corrupted (non-numeric) quantity left over from before this was validated.
 function getCart() {
+  let cart;
   try {
-    return JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || {};
+    cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || {};
   } catch (err) {
     return {};
   }
+  let changed = false;
+  for (const key of Object.keys(cart)) {
+    if (!Number.isFinite(cart[key].quantity) || cart[key].quantity <= 0) {
+      delete cart[key];
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  }
+  return cart;
 }
 
 // Persists cart to localStorage and updates the badge
@@ -24,16 +37,26 @@ function saveCart(cart) {
   updateCartBadge();
 }
 
+// Coerces a value to a safe positive integer quantity, falling back to 0 for
+// anything invalid (NaN, undefined, negative) so a bad value can never get
+// stuck in the cart and silently break checkout.
+function sanitizeQuantity(value) {
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 // Adds an item to the cart (quantity is additive if item already exists)
 // variantSkuId is null for listings without variants
 function addToCart(listingId, quantity = 1, variantSkuId = null) {
   const cart = getCart();
   const key = cartKey(listingId, variantSkuId);
   const existing = cart[key];
+  const nextQuantity = (existing ? sanitizeQuantity(existing.quantity) : 0) + sanitizeQuantity(quantity);
+  if (nextQuantity <= 0) return;
   cart[key] = {
     listingId,
     variantSkuId,
-    quantity: (existing ? existing.quantity : 0) + quantity,
+    quantity: nextQuantity,
   };
   saveCart(cart);
 }
@@ -41,10 +64,11 @@ function addToCart(listingId, quantity = 1, variantSkuId = null) {
 // Updates the quantity of an item in the cart (or removes if quantity <= 0)
 function setCartQuantity(key, quantity) {
   const cart = getCart();
-  if (quantity <= 0) {
+  const safeQuantity = sanitizeQuantity(quantity);
+  if (safeQuantity <= 0) {
     delete cart[key];
   } else if (cart[key]) {
-    cart[key].quantity = quantity;
+    cart[key].quantity = safeQuantity;
   }
   saveCart(cart);
   renderCartDrawer();

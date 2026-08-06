@@ -82,7 +82,7 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ Prawdziwy dostawca płatności (Stripe) — Stripe Checkout + webhook
 - 4❌ Poprawic konwersje walut
 - 5❌ Dodac zadania do Jira
-- 3❌ zdefiniowanie systemu tlumaczenia komunikatów systemowych
+- 3❌ zdefiniowanie systemu tlumaczenia komunikatów systemowych (po zaciagnieciu jezyka użytkownika, jezyk przegladarki, ciasteczka, po zalogowaniu predferowany jezyk i przerzucamy do ciasteczka, kazdy jezyk ma osobny plik np pl.lang en.lang czyli przerzucamy jezyk UI + komunikaty systemowe do osobnych plików)
 - 2❌ przetlumaczyc komunikaty systemowe
 - 2❌ Zgłaszanie ofert/sklepów przez użytkowników (kolejka moderacji) — admin musi na razie ręcznie przeglądać listy
 
@@ -111,6 +111,12 @@ Zaufanie i obsługa sporów:
 Zasięg:
 - 4❌ Aplikacje mobilne (obecnie tylko web) (seller/buyer)
 - 5❌ PWA
+
+LOGOWANIE:
+- ❌ Logowanie przez googla
+
+TESTOWANIE:
+- ❌ zrobic k6 skrypty sprawdzic pool polaczeń
 
 LATER:
 - 0❌ Zakup i druk prawdziwych etykiet wysyłkowych z panelu (integracja z kurierem)
