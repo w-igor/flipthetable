@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	stripe "github.com/stripe/stripe-go/v82"
 )
 
 // main initializes the application server, establishes database connection,
@@ -27,6 +28,11 @@ func main() {
 
 	if err := runStartupMigrations(); err != nil {
 		log.Fatalf("Nie udało się wykonać migracji startowych: %v", err)
+	}
+
+	stripe.Key = stripeSecretKey()
+	if stripe.Key == "" {
+		log.Println("Uwaga: STRIPE_SECRET_KEY nie ustawiony — płatności Stripe nie będą działać")
 	}
 
 	mux := http.NewServeMux()
@@ -94,7 +100,10 @@ func main() {
 	mux.HandleFunc("GET /orders", requireAuth(handleListOrders))
 	mux.HandleFunc("GET /orders/stats", requireAuth(handleGetBuyerStats))
 	mux.HandleFunc("GET /orders/{id}", requireAuth(handleGetOrder))
-	mux.HandleFunc("POST /orders/{id}/pay", requireAuth(handlePayOrder))
+	mux.HandleFunc("POST /orders/checkout-session", requireAuth(handleCreateCheckoutSession))
+
+	// Stripe webhook: receives asynchronous payment confirmation events (signature-verified, no auth header)
+	mux.HandleFunc("POST /webhooks/stripe", handleStripeWebhook)
 
 	// Admin panel: manage users, shops, listings, orders, categories, and audit logs
 	mux.HandleFunc("GET /admin/stats", requireAdmin(handleAdminStats))

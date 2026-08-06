@@ -88,6 +88,12 @@ body {
   flex-direction: column;
 }
 
+.checkout-stripe-note {
+  font-size: 13px;
+  color: #6b6b6b;
+  margin: 0 0 16px;
+}
+
 .checkout-field label {
   font-size: 13px;
   font-weight: 600;

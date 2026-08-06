@@ -55,14 +55,10 @@ function renderOrderItem(order, item) {
 function renderPaymentRetry(order) {
   if (order.status !== 'pending' || order.payment_status === 'completed') return '';
   return `
-    <form class="order-pay-form" data-order-id="${order.id}">
-      <input type="text" class="order-pay-name" placeholder="${t('orders.pay_name_placeholder')}" required />
-      <input type="text" class="order-pay-number" inputmode="numeric" placeholder="${t('orders.pay_number_placeholder')}" required />
-      <input type="text" class="order-pay-expiry" placeholder="${t('orders.pay_expiry_placeholder')}" required />
-      <input type="text" class="order-pay-cvc" inputmode="numeric" placeholder="${t('orders.pay_cvc_placeholder')}" required />
-      <button type="submit">${t('orders.pay_again_btn')}</button>
+    <div class="order-pay-form" data-order-id="${order.id}">
+      <button type="button" class="order-pay-btn">${t('orders.pay_again_btn')}</button>
       <p class="order-pay-error"></p>
-    </form>
+    </div>
   `;
 }
 
@@ -103,44 +99,29 @@ function renderOrders(orders) {
     .join('');
 
   container.querySelectorAll('.order-pay-form').forEach((form) => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    form.querySelector('.order-pay-btn').addEventListener('click', async () => {
       const orderId = form.dataset.orderId;
       const errorEl = form.querySelector('.order-pay-error');
-      const submitBtn = form.querySelector('button');
+      const payBtn = form.querySelector('.order-pay-btn');
       errorEl.textContent = '';
+      payBtn.disabled = true;
 
-      const expiryMatch = form.querySelector('.order-pay-expiry').value.trim().match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
-      if (!expiryMatch) {
-        errorEl.textContent = t('orders.invalid_expiry_short');
-        return;
-      }
-      const expMonth = parseInt(expiryMatch[1], 10);
-      const expYear = expiryMatch[2].length === 2 ? 2000 + parseInt(expiryMatch[2], 10) : parseInt(expiryMatch[2], 10);
-
-      submitBtn.disabled = true;
       try {
-        const res = await authFetch(`/orders/${orderId}/pay`, {
+        const res = await authFetch('/orders/checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cardholder_name: form.querySelector('.order-pay-name').value.trim(),
-            card_number: form.querySelector('.order-pay-number').value.trim(),
-            exp_month: expMonth,
-            exp_year: expYear,
-            cvc: form.querySelector('.order-pay-cvc').value.trim(),
-          }),
+          body: JSON.stringify({ order_ids: [orderId] }),
         });
         const data = await res.json();
-        if (!res.ok) {
+        if (!res.ok || !data.url) {
           errorEl.textContent = data.message || t('orders.payment_failed');
-          submitBtn.disabled = false;
+          payBtn.disabled = false;
           return;
         }
-        loadOrders();
+        window.location.href = data.url;
       } catch (err) {
         errorEl.textContent = t('common.error_connect');
-        submitBtn.disabled = false;
+        payBtn.disabled = false;
       }
     });
   });
@@ -226,9 +207,18 @@ function onPageLocaleChange() {
   loadOrders();
 }
 
+function showCancelledPaymentBanner() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paymentCancelled') !== '1') return;
+  const banner = document.getElementById('ordersBanner');
+  banner.textContent = t('orders.payment_cancelled_banner');
+  banner.classList.add('show', 'warning');
+}
+
 function init() {
   if (!requireLogin()) return;
   updateHeaderForAuth();
+  showCancelledPaymentBanner();
   loadStats();
   loadOrders();
 }

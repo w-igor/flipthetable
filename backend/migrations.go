@@ -25,6 +25,10 @@ func runStartupMigrations() error {
 			expires_at    TIMESTAMPTZ NOT NULL,
 			connected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		// Stripe Checkout integration: track which session a payment belongs to,
+		// so the webhook handler can look up and update the right orders/payments.
+		`ALTER TABLE payments ADD COLUMN IF NOT EXISTS stripe_checkout_session_id VARCHAR(255)`,
+		`CREATE INDEX IF NOT EXISTS idx_payments_stripe_session_id ON payments (stripe_checkout_session_id)`,
 	}
 	for _, stmt := range statements {
 		if _, err := dbPool.Exec(ctx, stmt); err != nil {

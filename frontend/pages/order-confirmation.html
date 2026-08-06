@@ -167,12 +167,16 @@
             </div>
             ${linesHtml}
             <div class="order-total">
-              <span class="payment-status-badge payment-status-${paymentStatus}">${t('payment_status.' + paymentStatus)}</span>
+              <span class="payment-status-badge payment-status-${paymentStatus}" id="payment-badge-${order.id}">${t('payment_status.' + paymentStatus)}</span>
               ${t('checkout.total')}: ${parseFloat(order.total_amount).toFixed(2)} ${order.currency}
               ${parseFloat(order.shipping_amount) > 0 ? ` ${t('order_confirmation.shipping_included', { amount: parseFloat(order.shipping_amount).toFixed(2) + ' ' + order.currency })}` : ''}
             </div>
           `;
           container.appendChild(card);
+
+          if (paymentStatus === 'pending') {
+            pollPaymentStatus(order.id);
+          }
         } catch (err) {
           // skip failed order fetch
         }
@@ -180,6 +184,30 @@
 
       if (!container.hasChildNodes()) {
         container.innerHTML = `<p style="text-align:center;">${t('order_confirmation.error_loading')}</p>`;
+      }
+    }
+
+    // The Stripe webhook that confirms payment can arrive a moment after the buyer
+    // is redirected back here, so briefly re-check the order until it settles.
+    async function pollPaymentStatus(orderId, attemptsLeft = 6) {
+      if (attemptsLeft <= 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      try {
+        const res = await authFetch(`/orders/${orderId}`);
+        if (!res.ok) return;
+        const order = await res.json();
+        const paymentStatus = order.payment_status || 'pending';
+        if (paymentStatus === 'pending') {
+          pollPaymentStatus(orderId, attemptsLeft - 1);
+          return;
+        }
+        const badge = document.getElementById(`payment-badge-${orderId}`);
+        if (badge) {
+          badge.className = `payment-status-badge payment-status-${paymentStatus}`;
+          badge.textContent = t('payment_status.' + paymentStatus);
+        }
+      } catch (err) {
+        // give up silently — the buyer can still check orders.html later
       }
     }
 

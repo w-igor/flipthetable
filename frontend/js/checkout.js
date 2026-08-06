@@ -128,17 +128,6 @@ function initCheckout() {
     };
     const note = document.getElementById('note').value.trim();
 
-    const cardholderName = document.getElementById('cardholderName').value.trim();
-    const cardNumber = document.getElementById('cardNumber').value.trim();
-    const cardCvc = document.getElementById('cardCvc').value.trim();
-    const expiryMatch = document.getElementById('cardExpiry').value.trim().match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
-    if (!expiryMatch) {
-      showError(t('checkout.invalid_expiry'));
-      return;
-    }
-    const expMonth = parseInt(expiryMatch[1], 10);
-    const expYear = expiryMatch[2].length === 2 ? 2000 + parseInt(expiryMatch[2], 10) : parseInt(expiryMatch[2], 10);
-
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = t('checkout.processing');
@@ -162,27 +151,19 @@ function initCheckout() {
       const orderIds = data.orders.map((o) => o.id);
 
       submitBtn.textContent = t('checkout.processing_payment');
-      const paymentResults = await Promise.all(
-        orderIds.map((id) =>
-          authFetch(`/orders/${id}/pay`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              cardholder_name: cardholderName,
-              card_number: cardNumber,
-              exp_month: expMonth,
-              exp_year: expYear,
-              cvc: cardCvc,
-            }),
-          })
-            .then((r) => r.json())
-            .catch(() => ({ payment_status: 'failed' }))
-        )
-      );
+      const sessionRes = await authFetch('/orders/checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_ids: orderIds }),
+      });
+      const sessionData = await sessionRes.json();
 
-      const anyFailed = paymentResults.some((p) => p.payment_status !== 'completed');
-      const suffix = anyFailed ? '&paymentIssue=1' : '';
-      window.location.href = `order-confirmation.html?ids=${orderIds.join(',')}${suffix}`;
+      if (!sessionRes.ok || !sessionData.url) {
+        window.location.href = `order-confirmation.html?ids=${orderIds.join(',')}&paymentIssue=1`;
+        return;
+      }
+
+      window.location.href = sessionData.url;
     } catch (err) {
       showError(t('common.error_connect'));
       submitBtn.disabled = false;

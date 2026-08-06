@@ -2,12 +2,10 @@ package main
 
 import "time"
 
-type PayOrderRequest struct {
-	CardholderName string `json:"cardholder_name"`
-	CardNumber     string `json:"card_number"`
-	ExpMonth       int    `json:"exp_month"`
-	ExpYear        int    `json:"exp_year"`
-	CVC            string `json:"cvc"`
+// CheckoutSessionRequest requests a Stripe Checkout Session covering one or more
+// pending orders belonging to the authenticated buyer.
+type CheckoutSessionRequest struct {
+	OrderIDs []string `json:"order_ids"`
 }
 
 type PaymentView struct {

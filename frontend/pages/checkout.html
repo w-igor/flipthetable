@@ -55,25 +55,8 @@
           <textarea id="note" rows="3"></textarea>
         </div>
 
-        <h2 data-i18n="checkout.payment_heading">Płatność (symulowana)</h2>
-        <div class="checkout-field">
-          <label for="cardholderName" data-i18n="checkout.cardholder_name">Imię i nazwisko na karcie</label>
-          <input type="text" id="cardholderName" required />
-        </div>
-        <div class="checkout-field">
-          <label for="cardNumber" data-i18n="checkout.card_number">Numer karty</label>
-          <input type="text" id="cardNumber" inputmode="numeric" placeholder="4242 4242 4242 4242" required />
-        </div>
-        <div class="checkout-field-row">
-          <div class="checkout-field">
-            <label for="cardExpiry" data-i18n="checkout.card_expiry">Ważna do (MM/RR)</label>
-            <input type="text" id="cardExpiry" placeholder="12/28" required />
-          </div>
-          <div class="checkout-field">
-            <label for="cardCvc" data-i18n="checkout.cvc">CVC</label>
-            <input type="text" id="cardCvc" inputmode="numeric" placeholder="123" required />
-          </div>
-        </div>
+        <h2 data-i18n="checkout.payment_heading">Płatność</h2>
+        <p class="checkout-stripe-note" data-i18n="checkout.stripe_note">Po złożeniu zamówienia zostaniesz przekierowany do bezpiecznej płatności Stripe.</p>
 
         <button type="submit" class="checkout-submit-btn" id="submitBtn" data-i18n="checkout.submit">Zapłać i złóż zamówienie</button>
       </form>

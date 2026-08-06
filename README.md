@@ -48,10 +48,10 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 - ✅ `avg_rating` produktu przeliczane automatycznie po dodaniu opinii
 
 ### Płatności
-- ✅ Symulowana bramka płatnicza — przy checkoucie tworzone jest zamówienie (`status = pending`) razem z rekordem w `payments` (`status = pending`)
-- ✅ `POST /orders/:id/pay` — waliduje dane karty (Luhn, CVC, data ważności), symuluje autoryzację i ustawia `payments.status` (`completed`/`failed`) oraz `orders.status = paid` po sukcesie
-- ✅ Karta testowa `4000000000000002` zawsze kończy się odrzuceniem (jak testowe karty Stripe) — reszta prawidłowych numerów (Luhn) jest akceptowana
-- ✅ Możliwość ponowienia płatności ze strony „Moje zamówienia", jeśli pierwsza próba się nie powiedzie
+- ✅ Prawdziwa integracja ze Stripe (Stripe Checkout) — przy checkoucie tworzone jest zamówienie (`status = pending`) razem z rekordem w `payments` (`status = pending`)
+- ✅ `POST /orders/checkout-session` — tworzy Stripe Checkout Session (pozycje z `order_items` + koszt wysyłki) i zwraca URL, na który przekierowywany jest kupujący; numer karty nigdy nie trafia do naszego serwera
+- ✅ `POST /webhooks/stripe` — nasłuchuje zdarzeń Stripe (`checkout.session.completed`, `checkout.session.async_payment_failed`, `checkout.session.expired`) z weryfikacją podpisu (`STRIPE_WEBHOOK_SECRET`) i na tej podstawie ustawia `payments.status` oraz `orders.status = paid`
+- ✅ Możliwość ponowienia płatności ze strony „Moje zamówienia" (nowa sesja Stripe Checkout), jeśli pierwsza próba się nie powiedzie lub została anulowana
 
 ### Ulubione i wiadomości
 - ✅ Ulubione produkty (serduszko w katalogu, strona `pages/favorites.html`)
@@ -78,8 +78,8 @@ Monorepo dla Etsy-like marketplace z Go backendem, vanilla JS frontendem, i Neon
 
 ## Niezrobione jeszcze ❌
 
-- M 5❌ dodac komentarze do kodu 
-- 5❌ Prawdziwy dostawca płatności (Stripe/Przelewy24 itp.) — obecnie symulacja bez integracji zewnętrznej
+- ✅ dodac komentarze do kodu 
+- ✅ Prawdziwy dostawca płatności (Stripe) — Stripe Checkout + webhook
 - 4❌ Poprawic konwersje walut
 - 5❌ Dodac zadania do Jira
 - 3❌ zdefiniowanie systemu tlumaczenia komunikatów systemowych
@@ -165,7 +165,8 @@ Otwórz `http://localhost:3000/index.html` — przekierowuje do katalogu produkt
 - `POST /orders` — `{items: [{listing_id, variant_sku_id?, quantity}], shipping_addr, note}` — tworzy zamówienie(a), grupując koszyk per sklep; `variant_sku_id` jest wymagane, gdy oferta ma warianty
 - `GET /orders` — historia zamówień kupującego (z pozycjami i flagą `reviewed` per pozycja)
 - `GET /orders/:id` — szczegóły zamówienia
-- `POST /orders/:id/pay` — `{cardholder_name, card_number, exp_month, exp_year, cvc}` — symulowana płatność za zamówienie (kupujący, zamówienie musi być `pending`)
+- `POST /orders/checkout-session` — `{order_ids: [...]}` — tworzy Stripe Checkout Session dla jednego lub kilku zamówień (kupujący, zamówienia muszą być `pending`); zwraca `{url}` do przekierowania
+- `POST /webhooks/stripe` — webhook Stripe (bez auth, weryfikacja podpisu `Stripe-Signature`); potwierdza lub odrzuca płatność po stronie zamówień
 
 ### Sklepy
 - `POST /shops` — zakłada sklep dla zalogowanego użytkownika (ustawia `is_seller = true`), wymaga auth
@@ -225,6 +226,11 @@ PGPORT=5432
 PGDATABASE=flipthetable
 JWT_SECRET=***           # zmienić na prod!
 PORT=8080
+
+# Stripe (płatności)
+STRIPE_SECRET_KEY=***
+STRIPE_PUBLISHABLE_KEY=***
+STRIPE_WEBHOOK_SECRET=***   # z `stripe listen` lokalnie, albo z ustawień webhooka w Dashboardzie na prod
 ```
 
 ## Troubleshooting
